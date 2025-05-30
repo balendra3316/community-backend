@@ -17,6 +17,7 @@ import {
 } from '../controllers/admin/admin.controller';
 import { protectAdminRoute } from '../middleware/adminauth.middleware';
 import { upload, uploadLessonFiles } from '../middleware/upload.middleware';
+import { getAllCourses, getCourseDetails } from '../controllers/course.controller';
 //import { uploadLessonFiles } from '../middleware/upload.middleware';
 
 const router = express.Router();
@@ -25,20 +26,22 @@ const router = express.Router();
 
 
 // Course Management
-router.post('/courses',upload.single('coverImage'), createCourse);
-router.put('/courses/:courseId',upload.single('coverImage'), updateCourse);
-router.delete('/courses/:courseId', deleteCourse);
+router.get('/courses', getAllCourses);
+router.get('/courses/:courseId', getCourseDetails);
+router.post('/courses',protectAdminRoute,upload.single('coverImage'), createCourse);
+router.put('/courses/:courseId',protectAdminRoute,upload.single('coverImage'), updateCourse);
+router.delete('/courses/:courseId',protectAdminRoute, deleteCourse);
 
 // Section Management
-router.post('/courses/:courseId/sections', createSection);
-router.put('/sections/:sectionId', updateSection);
-router.delete('/sections/:sectionId', deleteSection);
+router.post('/courses/:courseId/sections',protectAdminRoute, createSection);
+router.put('/sections/:sectionId',protectAdminRoute, updateSection);
+router.delete('/sections/:sectionId',protectAdminRoute, deleteSection);
 
 // Lesson Management
-router.post('/courses/:courseId/lessons',uploadLessonFiles, createLessonInCourse);
-router.post('/sections/:sectionId/lessons',uploadLessonFiles, createLessonInSection);
-router.put('/lessons/:lessonId',uploadLessonFiles, updateLesson);
-router.delete('/lessons/:lessonId', deleteLesson);
+router.post('/courses/:courseId/lessons',protectAdminRoute,uploadLessonFiles, createLessonInCourse);
+router.post('/sections/:sectionId/lessons',protectAdminRoute,uploadLessonFiles, createLessonInSection);
+router.put('/lessons/:lessonId',protectAdminRoute,uploadLessonFiles, updateLesson);
+router.delete('/lessons/:lessonId',protectAdminRoute, deleteLesson);
 
 
 

@@ -1,17 +1,14 @@
 
 
 
-// src/controllers/notification.controller.ts
-import { Request, Response } from 'express';
-import Notification from '../models/Notification.model';
-import { Types } from 'mongoose';
+// // src/controllers/notification.controller.ts
+// import { Request, Response } from 'express';
+// import Notification from '../models/Notification.model';
 
 
 
-
-// Get all notifications for the current user
-
-// export const getNotifications = async (req: Request, res: Response): Promise<void>=> {
+// // Get all notifications for the current user
+// export const getNotifications = async (req: Request, res: Response): Promise<void> => {
 //   try {
 //     if (!req.user) {
 //       res.status(401).json({ message: 'Not authenticated' });
@@ -25,7 +22,13 @@ import { Types } from 'mongoose';
 //         path: 'post',
 //         model: 'Post',
 //         // Include all fields needed by PostDetailView
-//         select: 'title content image youtubeLink tags likes poll isPinned totalComments author createdAt updatedAt'
+//         select: 'title content image youtubeLink tags likes poll isPinned totalComments author createdAt updatedAt',
+//         // Now also populate the author of the post
+//         populate: {
+//           path: 'author',
+//           model: 'User',
+//           select: 'name avatar'
+//         }
 //       })
 //       .lean();
 
@@ -36,6 +39,97 @@ import { Types } from 'mongoose';
 //   }
 // };
 
+
+
+
+// // Mark all notifications as read
+// export const markAllAsRead = async (req: Request, res: Response): Promise<void> => {
+//   try {
+//     if (!req.user) {
+//       res.status(401).json({ message: 'Not authenticated' });
+//       return;
+//     }
+
+//     await Notification.updateMany(
+//       { recipient: req.user._id, read: false },
+//       { read: true }
+//     );
+
+//     res.json({ message: 'All notifications marked as read' });
+//   } catch (error) {
+//     console.error('Mark all notifications error:', error);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
+// // src/controllers/notification.controller.ts
+
+// // Mark notification as read
+// export const markAsRead = async (req: Request, res: Response): Promise<void> => {
+//   try {
+//     if (!req.user) {
+//       res.status(401).json({ message: 'Not authenticated' });
+//       return;
+//     }
+
+//     const notification = await Notification.findOneAndUpdate(
+//       {
+//         _id: req.params.id,
+//         recipient: req.user._id // Ensure user owns the notification
+//       },
+//       { read: true },
+//       { new: true }
+//     );
+
+//     if (!notification) {
+//       res.status(404).json({ message: 'Notification not found' });
+//       return;
+//     }
+
+//     // Emit update to the client
+//     req.app.get('io').to(req.user._id.toString()).emit('notificationRead', {
+//       notificationId: notification._id,
+//       unreadCount: await Notification.countDocuments({
+//         recipient: req.user._id,
+//         read: false
+//       })
+//     });
+
+//     res.json({ message: 'Notification marked as read' });
+//   } catch (error) {
+//     console.error('Mark notification error:', error);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
+
+
+
+// // Get unread notification count
+// export const getUnreadCount = async (req: Request, res: Response): Promise<void> => {
+//   try {
+//     if (!req.user) {
+//       res.status(401).json({ message: 'Not authenticated' });
+//       return;
+//     }
+
+//     const count = await Notification.countDocuments({
+//       recipient: req.user._id,
+//       read: false,
+//     });
+
+//     res.json({ count });
+//   } catch (error) {
+//     console.error('Get unread count error:', error);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
+
+
+// src/controllers/notification.controller.ts
+import { Request, Response } from 'express';
+import Notification from '../models/Notification.model';
 
 // Get all notifications for the current user
 export const getNotifications = async (req: Request, res: Response): Promise<void> => {
@@ -51,53 +145,19 @@ export const getNotifications = async (req: Request, res: Response): Promise<voi
       .populate({
         path: 'post',
         model: 'Post',
-        // Include all fields needed by PostDetailView
         select: 'title content image youtubeLink tags likes poll isPinned totalComments author createdAt updatedAt',
-        // Now also populate the author of the post
         populate: {
           path: 'author',
           model: 'User',
           select: 'name avatar'
         }
       })
-      .lean();
+      .lean()
+      .exec();
 
     res.json(notifications);
   } catch (error) {
     console.error('Get notifications error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-
-
-
-// Mark notification as read
-export const markAsRead = async (req: Request, res: Response): Promise<void> => {
-  try {
-    if (!req.user) {
-      res.status(401).json({ message: 'Not authenticated' });
-      return;
-    }
-
-    const notification = await Notification.findById(req.params.id);
-
-    if (!notification) {
-      res.status(404).json({ message: 'Notification not found' });
-      return;
-    }
-
-    if (notification.recipient.toString() !== req.user._id.toString()) {
-      res.status(403).json({ message: 'Not authorized' });
-      return;
-    }
-
-    notification.read = true;
-    await notification.save();
-
-    res.json({ message: 'Notification marked as read' });
-  } catch (error) {
-    console.error('Mark notification error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -110,10 +170,21 @@ export const markAllAsRead = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    await Notification.updateMany(
+    const result = await Notification.updateMany(
       { recipient: req.user._id, read: false },
       { read: true }
     );
+
+    // Only emit socket event if notifications were actually updated
+    if (result.modifiedCount > 0) {
+      const io = req.app.get('io');
+      if (io) {
+        io.to(req.user._id.toString()).emit('notificationRead', {
+          notificationId: 'all',
+          unreadCount: 0
+        });
+      }
+    }
 
     res.json({ message: 'All notifications marked as read' });
   } catch (error) {
@@ -121,6 +192,86 @@ export const markAllAsRead = async (req: Request, res: Response): Promise<void> 
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// Mark notification as read
+export const markAsRead = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ message: 'Not authenticated' });
+      return;
+    }
+
+    const notification = await Notification.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        recipient: req.user._id,
+        read: false // Only update if it's currently unread
+      },
+      { read: true },
+      { new: true }
+    );
+
+    if (!notification) {
+      res.status(404).json({ message: 'Notification not found or already read' });
+      return;
+    }
+
+    // Get updated unread count more efficiently
+    const unreadCount = await Notification.countDocuments({
+      recipient: req.user._id,
+      read: false
+    });
+
+    // Emit update to the client
+    const io = req.app.get('io');
+    if (io) {
+      io.to(req.user._id.toString()).emit('notificationRead', {
+        notificationId: notification._id,
+        unreadCount
+      });
+    }
+
+    res.json({ message: 'Notification marked as read' });
+  } catch (error) {
+    console.error('Mark notification error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Get unread notification count
+export const getUnreadCount = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ message: 'Not authenticated' });
+      return;
+    }
+
+    const count = await Notification.countDocuments({
+      recipient: req.user._id,
+      read: false,
+    });
+
+    res.json({ count });
+  } catch (error) {
+    console.error('Get unread count error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Delete a notification
 export const deleteNotification = async (req: Request, res: Response): Promise<void> => {
@@ -151,22 +302,40 @@ export const deleteNotification = async (req: Request, res: Response): Promise<v
   }
 }
 
-// Get unread notification count
-export const getUnreadCount = async (req: Request, res: Response): Promise<void> => {
-  try {
-    if (!req.user) {
-      res.status(401).json({ message: 'Not authenticated' });
-      return;
-    }
 
-    const count = await Notification.countDocuments({
-      recipient: req.user._id,
-      read: false,
-    });
 
-    res.json({ count });
-  } catch (error) {
-    console.error('Get unread count error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
+
+
+
+
+
+
+// // Mark notification as read
+// export const markAsRead = async (req: Request, res: Response): Promise<void> => {
+//   try {
+//     if (!req.user) {
+//       res.status(401).json({ message: 'Not authenticated' });
+//       return;
+//     }
+
+//     const notification = await Notification.findById(req.params.id);
+
+//     if (!notification) {
+//       res.status(404).json({ message: 'Notification not found' });
+//       return;
+//     }
+
+//     if (notification.recipient.toString() !== req.user._id.toString()) {
+//       res.status(403).json({ message: 'Not authorized' });
+//       return;
+//     }
+
+//     notification.read = true;
+//     await notification.save();
+
+//     res.json({ message: 'Notification marked as read' });
+//   } catch (error) {
+//     console.error('Mark notification error:', error);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };

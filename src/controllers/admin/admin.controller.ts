@@ -14,7 +14,7 @@ const generateAdminToken = (id: string): string => {
   const payload = { id, isAdmin: true };
 
   const options: SignOptions = {
-    expiresIn: '1d', // Admin tokens expire in 1 day for security
+    expiresIn: '3d', // Admin tokens expire in 1 day for security
   };
 
   return jwt.sign(payload, secret, options);

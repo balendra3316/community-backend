@@ -27,5 +27,15 @@ const PointsHistorySchema: Schema = new Schema(
 
 // Add TTL index to automatically delete records after 30 days
 PointsHistorySchema.index({ createdAt: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 });
+// Add these indexes for better performance
+PointsHistorySchema.index({ userId: 1, createdAt: -1 });
+
+// Index for date-based queries (weekly/monthly leaderboards)
+PointsHistorySchema.index({ createdAt: -1 });
 
 export default mongoose.model<IPointsHistory>('PointsHistory', PointsHistorySchema);
+
+
+
+
+

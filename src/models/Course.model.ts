@@ -7,6 +7,7 @@ export interface ICourse extends Document {
   description: string;
   coverImage: string;
   order: number;
+  totalLessons:number
   createdAt: Date;
   updatedAt: Date;
   createdBy?: Types.ObjectId;
@@ -18,6 +19,7 @@ const CourseSchema: Schema = new Schema(
     description: { type: String },
     coverImage: { type: String },
     order: { type: Number, default: 0 },
+    totalLessons:{type:Number, default:0},
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' }
   },
   { timestamps: true }

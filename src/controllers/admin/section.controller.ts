@@ -115,4 +115,4 @@ export const deleteSection = async (req: Request, res: Response): Promise<void> 
     res.status(500).json({ message: 'Failed to delete section' });
     return;
   }
-};
+}

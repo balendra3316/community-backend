@@ -19,6 +19,7 @@ export interface IPost extends Document {
   totalComments: number;  // Add this field
   createdAt: Date;
   updatedAt: Date;
+  lastComment:Date
 }
 
 const PostSchema: Schema = new Schema(
@@ -40,7 +41,8 @@ const PostSchema: Schema = new Schema(
       voters: [{ type: Schema.Types.ObjectId, ref: 'User' }]
     },
     isPinned: { type: Boolean, default: false },
-    totalComments: { type: Number, default: 0 }
+    totalComments: { type: Number, default: 0 },
+    lastComment:{type:Date, default:null}
   },
   { timestamps: true }
 );
