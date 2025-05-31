@@ -20,7 +20,7 @@ export const deleteImageFromBunnyStorage = async (
   imageUrl: string
 ): Promise<void> => {
   try {
-    if (imageUrl && imageUrl.includes(bunnyConfig.cdnUrl)) {
+   if (imageUrl && bunnyConfig.cdnUrl && imageUrl.includes(bunnyConfig.cdnUrl)) {
       const deleted = await BunnyStorageService.deleteFile(imageUrl);
       if (deleted) {
       } else {
