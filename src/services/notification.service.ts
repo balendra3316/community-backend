@@ -1,5 +1,5 @@
 
-// src/services/notfication.servives
+
 import { Types } from 'mongoose';
 import Notification from '../models/Notification.model';
 

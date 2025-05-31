@@ -51,17 +51,17 @@ export const toggleLessonCompletion = async (
     );
 
     if (alreadyCompleted) {
-      // Remove lesson from completed lessons
+
       progress.completedLessons = progress.completedLessons.filter(
         id => !id.equals(lessonObjectId)
       );
     } else {
-      // Add lesson to completed lessons
+
       progress.completedLessons.push(lessonObjectId);
       isCompleted = true;
     }
 
-    // Update completion percentage using Course model's totalLessons
+
     const course = await Course.findById(courseObjectId).select('totalLessons');
     const totalLessons = course?.totalLessons || 0;
 
@@ -72,30 +72,28 @@ export const toggleLessonCompletion = async (
 
     await progress.save();
 
-    // Send immediate response
+
     res.status(200).json({
       isCompleted,
       success: true
     });
 
-    // Handle points awarding in background using setImmediate (non-blocking)
+
     if (isCompleted && progress.completionPercentage === 100 && !progress.pointsAwarded) {
       setImmediate(async () => {
         try {
           await updateUserPoints(userId.toString(), 10);
-          // Update pointsAwarded flag
+
           await Progress.findOneAndUpdate(
             { userId, courseId: courseObjectId },
             { pointsAwarded: true }
           );
         } catch (error) {
-          console.error('Background points update failed:', error);
         }
       });
     }
 
   } catch (error) {
-    console.error('Error toggling lesson completion:', error);
     next(error);
   }
 };

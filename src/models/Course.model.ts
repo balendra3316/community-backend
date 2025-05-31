@@ -1,4 +1,4 @@
-// src/models/Course.model.ts
+
 import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface ICourse extends Document {

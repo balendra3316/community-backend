@@ -38,7 +38,7 @@ export const createLessonInCourse = async (
       return;
     }
 
-    // Handle order
+
     let lessonOrder = order;
     if (lessonOrder === undefined) {
       const highestOrder = await Lesson.findOne({ courseId, sectionId: null })
@@ -47,13 +47,13 @@ export const createLessonInCourse = async (
       lessonOrder = highestOrder ? highestOrder.order + 1 : 0;
     }
 
-    // Process images - handle both URLs and file uploads
+
     const processedImages = [];
     const parsedImages = Array.isArray(images) ? images : JSON.parse(images || '[]');
 
     for (const img of parsedImages) {
       if (img.url) {
-        // Direct URL case
+
         processedImages.push({
           url: img.url,
           caption: img.caption || '',
@@ -62,19 +62,19 @@ export const createLessonInCourse = async (
       }
     }
 
-    // Process uploaded image files
+
     if (req.files) {
       const imageFiles = (req.files as Express.Multer.File[]).filter(file => 
         file.fieldname.startsWith('imageFiles[')
       );
 
       for (const file of imageFiles) {
-        // Extract index from fieldname (e.g., "imageFiles[0]" => 0)
+
         const index = parseInt(file.fieldname.match(/\[(\d+)\]/)?.[1] || '0');
         const metadata = parsedImages[index] || {};
 
         try {
-          // Upload to Bunny Storage
+
           const imageUrl = await BunnyStorageService.uploadImage(
             file.buffer,
             file.originalname,
@@ -87,19 +87,18 @@ export const createLessonInCourse = async (
             altText: metadata.altText || file.originalname
           });
         } catch (error) {
-          console.error('Error uploading image to Bunny Storage:', error);
           throw new Error('Failed to upload image');
         }
       }
     }
 
-    // Process resources - handle both URLs and file uploads
+
     const processedResources = [];
     const parsedResources = Array.isArray(resources) ? resources : JSON.parse(resources || '[]');
 
     for (const res of parsedResources) {
       if (res.fileUrl) {
-        // Direct URL case
+
         processedResources.push({
           title: res.title || '',
           fileUrl: res.fileUrl,
@@ -108,32 +107,32 @@ export const createLessonInCourse = async (
       }
     }
 
-    // Process uploaded resource files
+
     if (req.files) {
       const resourceFiles = (req.files as Express.Multer.File[]).filter(file => 
         file.fieldname.startsWith('resourceFiles[')
       );
 
       for (const file of resourceFiles) {
-        // Extract index from fieldname (e.g., "resourceFiles[0]" => 0)
+
         const index = parseInt(file.fieldname.match(/\[(\d+)\]/)?.[1] || '0');
         const metadata = parsedResources[index] || {};
 
         try {
-          // Generate unique filename with proper extension
+
           const timestamp = Date.now();
           const extension = path.extname(file.originalname);
           const baseName = path.basename(file.originalname, extension);
           const uniqueFileName = `${timestamp}-${baseName}${extension}`;
 
-          // Upload to Bunny Storage
+
           const resourceUrl = await BunnyStorageService.uploadImage(
             file.buffer,
             uniqueFileName,
             'lesson-resources'
           );
 
-          // Determine file type
+
           let fileType = 'document';
           if (file.mimetype.includes('pdf')) fileType = 'pdf';
           else if (file.mimetype.includes('word')) fileType = 'doc';
@@ -146,7 +145,6 @@ export const createLessonInCourse = async (
             fileType: fileType
           });
         } catch (error) {
-          console.error('Error uploading resource to Bunny Storage:', error);
           throw new Error('Failed to upload resource file');
         }
       }
@@ -173,7 +171,6 @@ export const createLessonInCourse = async (
 
     res.status(201).json(newLesson);
   } catch (error) {
-    console.error('Error creating lesson:', error);
     next(error);
   }
 };
@@ -215,7 +212,7 @@ export const createLessonInSection = async (
       lessonOrder = highestOrder ? highestOrder.order + 1 : 0;
     }
 
-    // Process images - handle both URLs and file uploads
+
     const processedImages = [];
     const parsedImages = Array.isArray(images) ? images : JSON.parse(images || '[]');
 
@@ -229,7 +226,7 @@ export const createLessonInSection = async (
       }
     }
 
-    // Process uploaded image files
+
     if (req.files) {
       const imageFiles = (req.files as Express.Multer.File[]).filter(file => 
         file.fieldname.startsWith('imageFiles[')
@@ -252,13 +249,12 @@ export const createLessonInSection = async (
             altText: metadata.altText || file.originalname
           });
         } catch (error) {
-          console.error('Error uploading image to Bunny Storage:', error);
           throw new Error('Failed to upload image');
         }
       }
     }
 
-    // Process resources - handle both URLs and file uploads
+
     const processedResources = [];
     const parsedResources = Array.isArray(resources) ? resources : JSON.parse(resources || '[]');
 
@@ -272,7 +268,7 @@ export const createLessonInSection = async (
       }
     }
 
-    // Process uploaded resource files
+
     if (req.files) {
       const resourceFiles = (req.files as Express.Multer.File[]).filter(file => 
         file.fieldname.startsWith('resourceFiles[')
@@ -283,7 +279,7 @@ export const createLessonInSection = async (
         const metadata = parsedResources[index] || {};
 
         try {
-          // Generate unique filename with proper extension
+
           const timestamp = Date.now();
           const extension = path.extname(file.originalname);
           const baseName = path.basename(file.originalname, extension);
@@ -307,7 +303,6 @@ export const createLessonInSection = async (
             fileType: fileType
           });
         } catch (error) {
-          console.error('Error uploading resource to Bunny Storage:', error);
           throw new Error('Failed to upload resource file');
         }
       }
@@ -336,7 +331,6 @@ export const createLessonInSection = async (
 
     res.status(201).json(newLesson);
   } catch (error) {
-    console.error('Error creating lesson in section:', error);
     next(error);
   }
 };
@@ -364,7 +358,7 @@ export const updateLesson = async (
       return;
     }
 
-    // Handle section update if provided
+
     if (sectionId !== undefined) {
       if (sectionId && mongoose.Types.ObjectId.isValid(sectionId)) {
         const section = await Section.findById(sectionId);
@@ -382,16 +376,15 @@ export const updateLesson = async (
       }
     }
 
-    // Process images - handle both URLs and file uploads
+
     if (images !== undefined) {
-      // Delete old images from Bunny Storage (only if they're hosted on Bunny)
+
       if (lesson.images && lesson.images.length > 0) {
         for (const oldImage of lesson.images) {
           if (oldImage.url && oldImage.url.includes('bunnycdn.com')) {
             try {
               await BunnyStorageService.deleteFile(oldImage.url);
             } catch (error) {
-              console.error('Error deleting old image:', error);
             }
           }
         }
@@ -410,7 +403,7 @@ export const updateLesson = async (
         }
       }
 
-      // Process uploaded image files
+
       if (req.files) {
         const imageFiles = (req.files as Express.Multer.File[]).filter(file => 
           file.fieldname.startsWith('imageFiles[')
@@ -433,7 +426,6 @@ export const updateLesson = async (
               altText: metadata.altText || file.originalname
             });
           } catch (error) {
-            console.error('Error uploading image to Bunny Storage:', error);
             throw new Error('Failed to upload image');
           }
         }
@@ -442,16 +434,15 @@ export const updateLesson = async (
       lesson.images = processedImages;
     }
 
-    // Process resources - handle both URLs and file uploads
+
     if (resources !== undefined) {
-      // Delete old resources from Bunny Storage (only if they're hosted on Bunny)
+
       if (lesson.resources && lesson.resources.length > 0) {
         for (const oldResource of lesson.resources) {
           if (oldResource.fileUrl && oldResource.fileUrl.includes('bunnycdn.com')) {
             try {
               await BunnyStorageService.deleteFile(oldResource.fileUrl);
             } catch (error) {
-              console.error('Error deleting old resource:', error);
             }
           }
         }
@@ -470,7 +461,7 @@ export const updateLesson = async (
         }
       }
 
-      // Process uploaded resource files
+
       if (req.files) {
         const resourceFiles = (req.files as Express.Multer.File[]).filter(file => 
           file.fieldname.startsWith('resourceFiles[')
@@ -481,7 +472,7 @@ export const updateLesson = async (
           const metadata = parsedResources[index] || {};
 
           try {
-            // Generate unique filename with proper extension
+
             const timestamp = Date.now();
             const extension = path.extname(file.originalname);
             const baseName = path.basename(file.originalname, extension);
@@ -505,7 +496,6 @@ export const updateLesson = async (
               fileType: fileType
             });
           } catch (error) {
-            console.error('Error uploading resource to Bunny Storage:', error);
             throw new Error('Failed to upload resource file');
           }
         }
@@ -514,7 +504,7 @@ export const updateLesson = async (
       lesson.resources = processedResources;
     }
 
-    // Update basic fields
+
     if (title !== undefined) lesson.title = title;
     if (content !== undefined) lesson.content = content;
     if (videoUrl !== undefined) lesson.videoUrl = videoUrl;
@@ -531,7 +521,6 @@ export const updateLesson = async (
 
     res.status(200).json(lesson);
   } catch (error) {
-    console.error('Error updating lesson:', error);
     next(error);
   }
 };
@@ -551,7 +540,7 @@ export const deleteLesson = async (
 
     const lessonObjectId = new mongoose.Types.ObjectId(lessonId);
     
-    // Find the lesson to get courseId and files before deletion
+
     const lesson = await Lesson.findById(lessonObjectId);
     
     if (!lesson) {
@@ -561,38 +550,34 @@ export const deleteLesson = async (
 
     const courseId = lesson.courseId;
 
-    // Delete associated images from Bunny Storage
+
     if (lesson.images && lesson.images.length > 0) {
       for (const image of lesson.images) {
         if (image.url && image.url.includes('bunnycdn.com')) {
           try {
             await BunnyStorageService.deleteFile(image.url);
-            console.log(`Deleted image: ${image.url}`);
           } catch (error) {
-            console.error(`Error deleting image ${image.url}:`, error);
           }
         }
       }
     }
 
-    // Delete associated resources from Bunny Storage
+
     if (lesson.resources && lesson.resources.length > 0) {
       for (const resource of lesson.resources) {
         if (resource.fileUrl && resource.fileUrl.includes('bunnycdn.com')) {
           try {
             await BunnyStorageService.deleteFile(resource.fileUrl);
-            console.log(`Deleted resource: ${resource.fileUrl}`);
           } catch (error) {
-            console.error(`Error deleting resource ${resource.fileUrl}:`, error);
           }
         }
       }
     }
 
-    // Delete the lesson from database
+
     await Lesson.findByIdAndDelete(lessonObjectId);
 
-    // Remove the deleted lesson from all users' completed lessons arrays
+
     await Progress.updateMany(
       { courseId },
       { 
@@ -603,21 +588,20 @@ export const deleteLesson = async (
       }
     );
 
-    // Decrease the course's totalLessons count by 1
+
     await Course.findByIdAndUpdate(
       courseId,
       { $inc: { totalLessons: -1 } },
       { new: true }
     );
 
-    // Recalculate progress for the course
+
     await recalculateProgressForCourse(courseId);
 
     res.status(200).json({ 
       message: 'Lesson and associated files deleted successfully' 
     });
   } catch (error) {
-    console.error('Error deleting lesson:', error);
     next(error);
   }
 };
@@ -628,30 +612,30 @@ export const deleteLesson = async (
 
 
 
-// Helper function to recalculate progress percentages for a course
+
 async function recalculateProgressForCourse(courseId: mongoose.Types.ObjectId) {
     try {
-      // Get total published lessons count
+
       const totalLessons = await Lesson.countDocuments({ 
         courseId, 
         isPublished: true 
       });
       
-      // Get all progress records for this course
+
       const progressRecords = await Progress.find({ courseId });
       
-      // For each user progress, recalculate percentage
+
       for (const progress of progressRecords) {
-        // Get completed lessons that are still published
+
         const validCompletedLessons = await Lesson.find({
           _id: { $in: progress.completedLessons },
           isPublished: true
         });
         
-        // Update completed lessons to only include published ones
+
         progress.completedLessons = validCompletedLessons.map(lesson => lesson._id);
         
-        // Calculate new percentage
+
         progress.completionPercentage = totalLessons > 0 
           ? (progress.completedLessons.length / totalLessons) * 100 
           : 0;
@@ -659,6 +643,5 @@ async function recalculateProgressForCourse(courseId: mongoose.Types.ObjectId) {
         await progress.save();
       }
     } catch (error) {
-      console.error('Error recalculating progress:', error);
     }
   }

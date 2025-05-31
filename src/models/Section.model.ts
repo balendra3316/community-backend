@@ -1,4 +1,4 @@
-// src/models/Section.model.ts
+
 import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface ISection extends Document {

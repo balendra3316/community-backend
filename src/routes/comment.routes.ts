@@ -1,4 +1,4 @@
-// src/routes/comment.routes.ts
+
 import express from "express";
 import {
   createComment,

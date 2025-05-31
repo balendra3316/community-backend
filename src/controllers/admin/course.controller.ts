@@ -9,10 +9,10 @@ import mongoose from 'mongoose';
 import { BunnyStorageService } from '../../services/bunnyStorage.service'; // Adjust path as needed
 import { deleteImageFromBunnyStorage } from '../post.controller'; // Adjust path as needed
 
-// Extend Request interface to include user
 
 
-// Create a new course
+
+
 export const createCourse = async (
   req: Request,
   res: Response,
@@ -36,7 +36,6 @@ export const createCourse = async (
           'course-covers'
         );
       } catch (uploadError) {
-        console.error('Course cover image upload failed:', uploadError);
         res.status(500).json({ message: 'Image upload failed' });
         return;
       }
@@ -52,12 +51,11 @@ export const createCourse = async (
 
     res.status(201).json(newCourse);
   } catch (error) {
-    console.error('Error creating course:', error);
     next(error);
   }
 };
 
-// Update an existing course
+
 export const updateCourse = async (
   req: Request,
   res: Response,
@@ -78,15 +76,15 @@ export const updateCourse = async (
       return;
     }
 
-    // Store old cover image for background deletion
+
     const oldCoverImage = course.coverImage;
 
-    // Update course fields
+
     if (title) course.title = title;
     if (description !== undefined) course.description = description;
     if (order !== undefined) course.order = order;
 
-    // Handle new image upload if file exists
+
     if (req.file) {
       try {
         const newCoverImage = await BunnyStorageService.uploadImage(
@@ -96,7 +94,6 @@ export const updateCourse = async (
         );
         course.coverImage = newCoverImage;
       } catch (uploadError) {
-        console.error('Course cover image upload failed:', uploadError);
         res.status(500).json({ message: 'Image upload failed' });
         return;
       }
@@ -105,7 +102,7 @@ export const updateCourse = async (
     await course.save();
     res.status(200).json(course);
 
-    // Delete old image in background if new image was uploaded
+
     if (req.file && oldCoverImage) {
       setImmediate(() => {
         deleteImageFromBunnyStorage(oldCoverImage);
@@ -113,12 +110,11 @@ export const updateCourse = async (
     }
 
   } catch (error) {
-    console.error('Error updating course:', error);
     next(error);
   }
 };
 
-// Delete a course
+
 export const deleteCourse = async (
   req: Request,
   res: Response,
@@ -138,21 +134,21 @@ export const deleteCourse = async (
       return;
     }
 
-    // Store cover image for background deletion
+
     const coverImageUrl = course.coverImage;
 
-    // Delete course and associated data from database first
+
     await Course.findByIdAndDelete(courseId);
     await Section.deleteMany({ courseId });
     await Lesson.deleteMany({ courseId });
     await Progress.deleteMany({ courseId });
 
-    // Send response immediately
+
     res.status(200).json({
       message: 'Course and all associated data deleted successfully',
     });
 
-    // Delete cover image from Bunny Storage in background
+
     if (coverImageUrl) {
       setImmediate(() => {
         deleteImageFromBunnyStorage(coverImageUrl);
@@ -160,7 +156,6 @@ export const deleteCourse = async (
     }
 
   } catch (error) {
-    console.error('Error deleting course:', error);
     next(error);
   }
 };

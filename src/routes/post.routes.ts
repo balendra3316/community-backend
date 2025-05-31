@@ -1,5 +1,5 @@
 
-// src/routes/post.routes.ts
+
 import express from 'express';
 import { createPost, getPosts, getPost, likePost, votePoll, deletePost, getMyPosts } from '../controllers/post.controller';
 import { protect } from '../middleware/auth.middleware';

@@ -1,8 +1,8 @@
-// src/controllers/notification.controller.ts
+
 import { Request, Response } from "express";
 import Notification from "../models/Notification.model";
 
-// Get all notifications for the current user
+
 export const getNotifications = async (
   req: Request,
   res: Response
@@ -32,12 +32,11 @@ export const getNotifications = async (
 
     res.json(notifications);
   } catch (error) {
-    console.error("Get notifications error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Mark all notifications as read
+
 export const markAllAsRead = async (
   req: Request,
   res: Response
@@ -53,7 +52,7 @@ export const markAllAsRead = async (
       { read: true }
     );
 
-    // Only emit socket event if notifications were actually updated
+
     if (result.modifiedCount > 0) {
       const io = req.app.get("io");
       if (io) {
@@ -66,12 +65,11 @@ export const markAllAsRead = async (
 
     res.json({ message: "All notifications marked as read" });
   } catch (error) {
-    console.error("Mark all notifications error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Mark notification as read
+
 export const markAsRead = async (
   req: Request,
   res: Response
@@ -99,13 +97,13 @@ export const markAsRead = async (
       return;
     }
 
-    // Get updated unread count more efficiently
+
     const unreadCount = await Notification.countDocuments({
       recipient: req.user._id,
       read: false,
     });
 
-    // Emit update to the client
+
     const io = req.app.get("io");
     if (io) {
       io.to(req.user._id.toString()).emit("notificationRead", {
@@ -116,12 +114,11 @@ export const markAsRead = async (
 
     res.json({ message: "Notification marked as read" });
   } catch (error) {
-    console.error("Mark notification error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Get unread notification count
+
 export const getUnreadCount = async (
   req: Request,
   res: Response
@@ -139,12 +136,11 @@ export const getUnreadCount = async (
 
     res.json({ count });
   } catch (error) {
-    console.error("Get unread count error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Delete a notification
+
 export const deleteNotification = async (
   req: Request,
   res: Response
@@ -171,7 +167,6 @@ export const deleteNotification = async (
 
     res.json({ message: "Notification deleted successfully" });
   } catch (error) {
-    console.error("Delete notification error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

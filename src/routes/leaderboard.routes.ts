@@ -1,4 +1,4 @@
-// src/routes/leaderboard.routes.ts
+
 import express from 'express';
 import { 
   getAllTimeLeaderboard,

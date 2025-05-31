@@ -1,4 +1,4 @@
-// src/controllers/comment.controller.ts
+
 import { Request, Response } from "express";
 import Comment from "../models/Comment.model";
 import Post from "../models/Post.model";
@@ -13,7 +13,7 @@ import {
   emitUnreadCount,
 } from "../services/notification.service";
 
-// Enhanced createComment controller
+
 export const createComment = async (
   req: Request,
   res: Response
@@ -33,14 +33,14 @@ export const createComment = async (
       return;
     }
 
-    // let image = '';
-    // if (req.file) {
-    //   const result = await cloudinary.uploader.upload(
-    //     `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`,
-    //     { folder: 'community-comments' }
-    //   );
-    //   image = result.secure_url;
-    // }
+
+
+
+
+
+
+
+
 
     const comment = new Comment({
       post: postId,
@@ -59,7 +59,7 @@ export const createComment = async (
       });
     }
 
-    // Increment the totalComments count for the post
+
     await Post.findByIdAndUpdate(postId, {
       $inc: { totalComments: 1 },
       $set: { lastComment: new Date() },
@@ -69,11 +69,11 @@ export const createComment = async (
       .populate("author", "name avatar")
       .lean();
 
-    // Batch notification processing
+
     const notifications = [];
     const notificationEmissions = [];
 
-    // Notification for post author
+
     if (!parentId && post.author.toString() !== req.user._id.toString()) {
       const notification = await createNotification({
         recipient: post.author,
@@ -89,7 +89,7 @@ export const createComment = async (
       });
     }
 
-    // Notification for parent comment author
+
     if (parentId) {
       const parentComment = await Comment.findById(parentId)
         .select("author")
@@ -113,7 +113,7 @@ export const createComment = async (
       }
     }
 
-    // Batch emit notifications
+
     for (const emission of notificationEmissions) {
       emitNewNotification(
         req.app.get("io"),
@@ -127,7 +127,7 @@ export const createComment = async (
       emitUnreadCount(req.app.get("io"), emission.recipient, count);
     }
 
-    // Emit socket event for real-time comment updates
+
     req.app.get("io").emit("newComment", {
       postId,
       comment: populatedComment,
@@ -137,12 +137,11 @@ export const createComment = async (
 
     res.status(201).json(populatedComment);
   } catch (error) {
-    console.error("Create comment error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Enhanced deleteComment controller
+
 export const deleteComment = async (
   req: Request,
   res: Response
@@ -164,27 +163,27 @@ export const deleteComment = async (
       return;
     }
 
-    // Get the post ID and parent ID before deleting the comment
+
     const postId = comment.post;
     const parentId = comment.parent;
     const commentId = comment._id;
 
     await Comment.findByIdAndDelete(req.params.id);
 
-    // Check if it's a reply and handle accordingly
+
     const isReply = !!parentId;
 
-    // Handle point reduction
+
     const post = await Post.findById(comment.post);
     const isOwnPost = post?.author.toString() === req.user!._id.toString();
     if (!isOwnPost) {
       setImmediate(() => updateUserPoints(req.user!._id.toString(), -3));
     }
 
-    // Decrement the totalComments count for the post
+
     await Post.findByIdAndUpdate(postId, { $inc: { totalComments: -1 } });
 
-    // Emit socket event for real-time comment deletion
+
     req.app.get("io").emit("commentDeleted", {
       postId,
       commentId,
@@ -194,12 +193,11 @@ export const deleteComment = async (
 
     res.json({ message: "Comment deleted successfully" });
   } catch (error) {
-    console.error("Delete comment error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Like or unlike a comment
+
 export const likeComment = async (
   req: Request,
   res: Response
@@ -241,23 +239,22 @@ export const likeComment = async (
 
     res.json({ liked: !alreadyLiked, likeCount });
   } catch (error) {
-    console.error("Like comment error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// OPTIMIZED: Single query to get all replies with proper nesting
+
 const buildCommentTree = (comments: any[]): any[] => {
   const commentMap = new Map();
   const rootComments: any[] = [];
 
-  // First pass: create map and initialize replies array
+
   comments.forEach((comment) => {
     comment.replies = [];
     commentMap.set(comment._id.toString(), comment);
   });
 
-  // Second pass: build tree structure
+
   comments.forEach((comment) => {
     if (comment.parent) {
       const parent = commentMap.get(comment.parent.toString());
@@ -272,7 +269,7 @@ const buildCommentTree = (comments: any[]): any[] => {
   return rootComments;
 };
 
-// OPTIMIZED: Get comments with single query instead of recursive calls
+
 export const getCommentsByPost = async (
   req: Request,
   res: Response
@@ -289,13 +286,13 @@ export const getCommentsByPost = async (
       return;
     }
 
-    // Get total count of top-level comments
+
     const totalCount = await Comment.countDocuments({
       post: postId,
       parent: null,
     });
 
-    // Get top-level comments with pagination
+
     const topLevelComments = await Comment.find({ post: postId, parent: null })
       .sort({ createdAt: 1 })
       .skip(skip)
@@ -315,7 +312,7 @@ export const getCommentsByPost = async (
 
     const topLevelIds = topLevelComments.map((c) => c._id);
 
-    // OPTIMIZED: Single aggregation to get all comments and their nested replies
+
     const allComments = await Comment.aggregate([
       {
         $match: {
@@ -343,10 +340,10 @@ export const getCommentsByPost = async (
       },
     ]);
 
-    // Filter to only include replies that belong to our top-level comments
+
     const topLevelIdsSet = new Set(topLevelIds.map((id) => id.toString()));
 
-    // Build a map to track comment ancestry
+
     const getCommentAncestry = (
       comments: any[],
       commentId: string,
@@ -365,7 +362,7 @@ export const getCommentsByPost = async (
       return getCommentAncestry(comments, comment.parent.toString(), visited);
     };
 
-    // Filter comments to only include those that belong to our paginated top-level comments
+
     const relevantComments = allComments.filter((comment) => {
       const commentId = comment._id.toString();
       return (
@@ -374,10 +371,10 @@ export const getCommentsByPost = async (
       );
     });
 
-    // Build the comment tree
+
     const commentsWithReplies = buildCommentTree(relevantComments);
 
-    // Sort top-level comments to maintain the original order
+
     const sortedComments = topLevelIds
       .map((id) =>
         commentsWithReplies.find((c) => c._id.toString() === id.toString())
@@ -391,7 +388,6 @@ export const getCommentsByPost = async (
       totalCount,
     });
   } catch (error) {
-    console.error("Get comments error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

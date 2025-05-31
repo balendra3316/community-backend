@@ -4,7 +4,7 @@ import Course from '../../models/Course.model';
 import Lesson from '../../models/Lesson.model';
 import mongoose from 'mongoose';
 
-// Create a new section for a course
+
 export const createSection = async (req: Request, res: Response): Promise<void> => {
   try {
     const { courseId } = req.params;
@@ -46,13 +46,12 @@ export const createSection = async (req: Request, res: Response): Promise<void> 
     res.status(201).json(newSection);
     return;
   } catch (error) {
-    console.error('Error creating section:', error);
     res.status(500).json({ message: 'Failed to create section' });
     return;
   }
 };
 
-// Update an existing section
+
 export const updateSection = async (req: Request, res: Response): Promise<void> => {
   try {
     const { sectionId } = req.params;
@@ -77,13 +76,12 @@ export const updateSection = async (req: Request, res: Response): Promise<void> 
     res.status(200).json(section);
     return;
   } catch (error) {
-    console.error('Error updating section:', error);
     res.status(500).json({ message: 'Failed to update section' });
     return;
   }
 };
 
-// Delete a section
+
 export const deleteSection = async (req: Request, res: Response): Promise<void> => {
   try {
     const { sectionId } = req.params;
@@ -111,7 +109,6 @@ export const deleteSection = async (req: Request, res: Response): Promise<void> 
     });
     return;
   } catch (error) {
-    console.error('Error deleting section:', error);
     res.status(500).json({ message: 'Failed to delete section' });
     return;
   }

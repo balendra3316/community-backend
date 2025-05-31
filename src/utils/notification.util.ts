@@ -1,4 +1,4 @@
-// src/utils/notification.util.ts
+
 import Notification from '../models/Notification.model';
 import mongoose from 'mongoose';
 
@@ -23,7 +23,6 @@ export const createNotification = async (data: NotificationData) => {
     await notification.save();
     return notification;
   } catch (error) {
-    console.error('Create notification error:', error);
     throw error;
   }
 };

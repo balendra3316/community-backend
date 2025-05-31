@@ -1,10 +1,10 @@
-// src/controllers/leaderboard.controller.ts
+
 import { Request, Response } from "express";
 import User from "../models/User.model";
 import PointsHistory from "../models/PointsHistory.model";
 import mongoose from "mongoose";
 
-// Get all-time leaderboard
+
 export const getAllTimeLeaderboard = async (
   req: Request,
   res: Response
@@ -13,9 +13,9 @@ export const getAllTimeLeaderboard = async (
     const userId = new mongoose.Types.ObjectId(req.user?._id);
     const limit = parseInt(req.query.limit as string) || 10;
 
-    // Single aggregation to get both leaderboard and user info
+
     const [leaderboardData, userRankData] = await Promise.all([
-      // Get top users with rank
+
       User.aggregate([
         { $sort: { points: -1 } },
         { $limit: limit },
@@ -42,7 +42,7 @@ export const getAllTimeLeaderboard = async (
         },
       ]),
 
-      // Get user info and rank in single query
+
       User.aggregate([
         {
           $facet: {
@@ -68,7 +68,7 @@ export const getAllTimeLeaderboard = async (
       ]),
     ]);
 
-    // Add sequential rank to leaderboard
+
     const leaderboard = leaderboardData.map((user, index) => ({
       ...user,
       rank: index + 1,
@@ -90,12 +90,11 @@ export const getAllTimeLeaderboard = async (
 
     res.json(response);
   } catch (error) {
-    console.error("All-time leaderboard error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Get weekly leaderboard (FIXED VERSION)
+
 export const getWeeklyLeaderboard = async (
   req: Request,
   res: Response
@@ -168,10 +167,10 @@ export const getWeeklyLeaderboard = async (
     let userPoints = userPointsData?.points || 0;
     userPoints = userPoints > 0 ? userPoints : 0;
 
-    // Fixed rank calculation
+
     let userRank = null;
     if (userPoints > 0) {
-      // Count how many users have strictly more points than current user
+
       const usersWithMorePoints = allUsers.filter(
         (u: any) => u.points > userPoints
       ).length;
@@ -191,12 +190,11 @@ export const getWeeklyLeaderboard = async (
       },
     });
   } catch (error) {
-    console.error("Weekly leaderboard error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Get 30-day leaderboard (FIXED VERSION)
+
 export const getMonthlyLeaderboard = async (
   req: Request,
   res: Response
@@ -269,10 +267,10 @@ export const getMonthlyLeaderboard = async (
     let userPoints = userPointsData?.points || 0;
     userPoints = userPoints > 0 ? userPoints : 0;
 
-    // Fixed rank calculation
+
     let userRank = null;
     if (userPoints > 0) {
-      // Count how many users have strictly more points than current user
+
       const usersWithMorePoints = allUsers.filter(
         (u: any) => u.points > userPoints
       ).length;
@@ -292,7 +290,6 @@ export const getMonthlyLeaderboard = async (
       },
     });
   } catch (error) {
-    console.error("Monthly leaderboard error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

@@ -1,4 +1,4 @@
-// src/models/Lesson.model.ts
+
 import mongoose, { Document, Schema, Types } from 'mongoose';
 
 interface IResource {

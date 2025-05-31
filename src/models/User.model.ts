@@ -1,35 +1,3 @@
-// // src/models/User.model.ts
-// import mongoose, { Document, Schema, Types } from 'mongoose';
-
-// export interface IUser extends Document {
-//   _id: Types.ObjectId;
-//   googleId: string;
-//   email: string;
-//   name: string;
-//   avatar: string;
-//   isAdmin: boolean;
-//   badges: string[];
-//   bio: string;
-//   points: Number;
-//   createdAt: Date;
-//   updatedAt: Date;
-// }
-
-// const UserSchema: Schema = new Schema(
-//   {
-//     googleId: { type: String, required: true, unique: true },
-//     email: { type: String, required: true, unique: true },
-//     name: { type: String, required: true },
-//     avatar: { type: String, default: '' },
-//     isAdmin: { type: Boolean, default: false },
-//     badges: [{ type: String }],
-//     bio: { type: String, default: '' },
-//     points:{type:Number, default:0}
-//   },
-//   { timestamps: true }
-// );
-
-// export default mongoose.model<IUser>('User', UserSchema);
 
 
 
@@ -42,7 +10,39 @@
 
 
 
-// src/models/User.model.ts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface IUser extends Document {
@@ -115,9 +115,9 @@ const UserSchema: Schema = new Schema(
   },
   { 
     timestamps: true,
-    // Optimize queries by excluding version field by default
+
     versionKey: false,
-    // Add compound index for common queries
+
     index: [
       { email: 1, googleId: 1 }, // For authentication queries
       { points: -1, createdAt: -1 } // For leaderboard queries
@@ -125,7 +125,7 @@ const UserSchema: Schema = new Schema(
   }
 );
 
-// Add text index for search functionality (optional)
+
 UserSchema.index({ 
   name: 'text', 
   bio: 'text' 
@@ -133,19 +133,19 @@ UserSchema.index({
   name: 'user_search_index'
 });
 
-// Add pre-save middleware for data validation/cleaning
+
 UserSchema.pre('save', function(next) {
-  // Ensure email is lowercase
+
   if (this.email && typeof this.email==='string') {
     this.email = this.email.toLowerCase();
   }
   
-  // Clean up name
+
   if (this.name && typeof this.name==='string') {
     this.name = this.name.trim();
   }
   
-  // Clean up bio
+
   if (this.bio && typeof this.bio==='string') {
     this.bio = this.bio.trim();
   }
@@ -153,7 +153,7 @@ UserSchema.pre('save', function(next) {
   next();
 });
 
-// Add static method for efficient user lookup
+
 UserSchema.statics.findByEmailOrGoogleId = function(email: string, googleId?: string) {
   const query: any = { email: email.toLowerCase() };
   if (googleId) {
@@ -165,7 +165,7 @@ UserSchema.statics.findByEmailOrGoogleId = function(email: string, googleId?: st
   return this.findOne(query).lean();
 };
 
-// Add instance method for safe user data export
+
 UserSchema.methods.toSafeObject = function() {
   const userObject = this.toObject();
   delete userObject.__v;

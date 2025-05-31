@@ -1,4 +1,4 @@
-// src/controllers/course.controller.ts
+
 
 import Course from '../models/Course.model';
 import Section from '../models/Section.model';
@@ -11,7 +11,7 @@ import { Request, Response, NextFunction } from 'express';
 
     
 
-// Updates to getAllCourses function
+
 
 export const getAllCourses = async (
   req: Request,
@@ -21,18 +21,18 @@ export const getAllCourses = async (
   try {
     const userId = req.user?._id;
     
-    // If no user is logged in, just return the courses without progress
+
     if (!userId) {
       const courses = await Course.find().sort({ order: 1 });
       res.status(200).json(courses);
       return;
     }
 
-    // For logged-in users, use aggregation to get courses with progress in a single query
+
     const coursesWithProgress = await Course.aggregate([
       { $sort: { order: 1 } },
       {
-        // Left join with progress to get completion data
+
         $lookup: {
           from: 'progresses',
           let: { courseId: '$_id' },
@@ -53,7 +53,7 @@ export const getAllCourses = async (
         }
       },
       {
-        // Format the result
+
         $project: {
           _id: 1,
           title: 1,
@@ -85,7 +85,7 @@ export const getAllCourses = async (
           }
         }
       },
-      // Round the completion percentage
+
       {
         $addFields: {
           'progress.completionPercentage': { $round: ['$progress.completionPercentage', 0] }
@@ -95,7 +95,6 @@ export const getAllCourses = async (
 
     res.status(200).json(coursesWithProgress);
   } catch (error) {
-    console.error('Error fetching courses:', error);
     next(error);
   }
 };
@@ -125,21 +124,21 @@ export const getCourseDetails = async (
       return;
     }
 
-    // First fetch the course
+
     const course = await Course.findById(courseId);
     if (!course) {
       res.status(404).json({ message: 'Course not found' });
       return;
     }
 
-    // Use a parallel approach to fetch sections and lessons at the same time
+
     const [sections, lessons, progress] = await Promise.all([
       Section.find({ courseId }).sort({ order: 1 }),
       Lesson.find({ courseId }).sort({ order: 1 }),
       userId ? Progress.findOne({ userId, courseId }) : null
     ]);
 
-    // Calculate progress metrics
+
     let progressData = null;
     if (userId) {
       const completedLessons = progress?.completedLessons || [];
@@ -156,7 +155,7 @@ export const getCourseDetails = async (
       };
     }
 
-    // Define a flexible type for sections with lessons
+
     type SectionWithLessons = {
       _id: mongoose.Types.ObjectId | string;
       title: string;
@@ -169,7 +168,7 @@ export const getCourseDetails = async (
       [key: string]: any;
     };
 
-    // Organize lessons by section using a Map
+
     const sectionsWithLessons: SectionWithLessons[] = sections.map(section => ({
       ...section.toObject(),
       lessons: []
@@ -191,7 +190,7 @@ export const getCourseDetails = async (
       }
     });
     
-    // Fixed: Now using proper typing that allows string _id
+
     if (directLessons.length > 0) {
       sectionsWithLessons.push({
         _id: 'direct',
@@ -208,7 +207,6 @@ export const getCourseDetails = async (
 
     res.status(200).json(result);
   } catch (error) {
-    console.error('Error fetching course details:', error);
     next(error);
   }
 };

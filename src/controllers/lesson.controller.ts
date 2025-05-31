@@ -23,7 +23,7 @@ export const getLessonContent = async (
       return;
     }
 
-    // If user is authenticated
+
     if (userId) {
       await Progress.findOneAndUpdate(
         { userId, courseId: lesson.courseId },
@@ -47,10 +47,9 @@ export const getLessonContent = async (
       return;
     }
 
-    // If not authenticated, just return the lesson
+
     res.status(200).json(lesson);
   } catch (error) {
-    console.error('Error fetching lesson:', error);
     next(error); // forward to Express error middleware
   }
 };

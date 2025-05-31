@@ -1,4 +1,4 @@
-// src/controllers/post.controller.ts
+
 import { Request, Response } from "express";
 import Post from "../models/Post.model";
 import Comment from "../models/Comment.model";
@@ -23,13 +23,10 @@ export const deleteImageFromBunnyStorage = async (
     if (imageUrl && imageUrl.includes(bunnyConfig.cdnUrl)) {
       const deleted = await BunnyStorageService.deleteFile(imageUrl);
       if (deleted) {
-        console.log("Image deleted successfully from Bunny Storage:", imageUrl);
       } else {
-        console.log("Failed to delete image from Bunny Storage:", imageUrl);
       }
     }
   } catch (error) {
-    console.error("Error deleting image from Bunny Storage:", error);
   }
 };
 
@@ -39,37 +36,36 @@ export const updateUserPoints = async (
 ): Promise<void> => {
   try {
     if (delta < 0) {
-      // For negative delta (subtracting points), ensure we don't go below zero
+
       const user = await User.findById(userId);
       if (!user) return;
 
-      // Calculate how many points we can safely deduct
+
       const actualDelta = Math.max(-user.points, delta);
 
-      // Update the user's points, ensuring they don't go below zero
+
       await User.findByIdAndUpdate(userId, { $inc: { points: actualDelta } });
 
-      // Record the original negative delta in history (even if we couldn't deduct that much)
+
       await PointsHistory.create({
         userId,
         points: delta, // Store the original negative value for reporting purposes
       });
     } else {
-      // For positive delta, just add points as normal
+
       await User.findByIdAndUpdate(userId, { $inc: { points: delta } });
 
-      // Record the points change in history
+
       await PointsHistory.create({
         userId,
         points: delta,
       });
     }
   } catch (error) {
-    console.error("Failed to update user points:", error);
   }
 };
 
-// Create a new post
+
 export const createPost = async (
   req: CustomRequest,
   res: Response
@@ -83,7 +79,7 @@ export const createPost = async (
     const { title, content, youtubeLink, tags, poll } = req.body;
     let image = "";
 
-    // Handle image upload with Bunny Storage
+
     if (req.file) {
       try {
         image = await BunnyStorageService.uploadImage(
@@ -92,13 +88,12 @@ export const createPost = async (
           "community-posts"
         );
       } catch (uploadError) {
-        console.error("Image upload failed:", uploadError);
         res.status(500).json({ message: "Image upload failed" });
         return;
       }
     }
 
-    // Handle poll data
+
     let pollData;
     if (poll) {
       try {
@@ -111,13 +106,12 @@ export const createPost = async (
           voters: [],
         };
       } catch (pollError) {
-        console.error("Poll parsing error:", pollError);
         res.status(400).json({ message: "Invalid poll data format" });
         return;
       }
     }
 
-    // Create and save the post
+
     const post = new Post({
       author: req.user._id,
       title,
@@ -130,18 +124,18 @@ export const createPost = async (
 
     const savedPost = await post.save();
 
-    // Update user points asynchronously
+
     setImmediate(() => {
       updateUserPoints(req.user!._id.toString(), 5);
     });
 
-    // Populate the post with author information
+
     const populatedPost = await Post.findById(savedPost._id).populate(
       "author",
       "name avatar"
     );
 
-    // Emit socket events
+
     req.app.get("io").emit("newPost", populatedPost);
     req.app.get("io").to(req.user._id.toString()).emit("userPostCreated", {
       post: populatedPost,
@@ -150,12 +144,11 @@ export const createPost = async (
 
     res.status(201).json(populatedPost);
   } catch (error) {
-    console.error("Create post error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Get all posts with pagination and filtering
+
 export const getPosts = async (req: Request, res: Response): Promise<void> => {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -163,22 +156,22 @@ export const getPosts = async (req: Request, res: Response): Promise<void> => {
     const skip = (page - 1) * limit;
     const filter = (req.query.filter as string) || "default"; // Can be 'default', 'oldNew', or 'popular'
 
-    // Base query to find posts
+
     const baseQuery = Post.find();
 
-    // Apply sorting based on filter
+
     if (filter === "oldNew") {
-      // For old-to-new, sort by creation date ascending but keep pinned posts at top
+
       baseQuery.sort({ isPinned: -1, createdAt: 1 });
     } else if (filter === "popular") {
-      // For popular posts, sort by likes/views but keep pinned posts at top
+
       baseQuery.sort({ isPinned: -1, likes: -1, views: -1, createdAt: -1 });
     } else {
-      // Default: newest first (recent-to-old) with pinned posts at top
+
       baseQuery.sort({ isPinned: -1, createdAt: -1 });
     }
 
-    // Apply pagination and populate author details
+
     const posts = await baseQuery
       .skip(skip)
       .limit(limit)
@@ -194,12 +187,11 @@ export const getPosts = async (req: Request, res: Response): Promise<void> => {
       filter: filter,
     });
   } catch (error) {
-    console.error("Get posts error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Get a single post with comments
+
 export const getPost = async (req: Request, res: Response): Promise<void> => {
   try {
     const post = await Post.findById(req.params.id)
@@ -228,12 +220,11 @@ export const getPost = async (req: Request, res: Response): Promise<void> => {
 
     res.json({ post, comments: commentsWithReplies });
   } catch (error) {
-    console.error("Get post error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Like or unlike a post
+
 export const likePost = async (
   req: CustomRequest,
   res: Response
@@ -265,9 +256,9 @@ export const likePost = async (
         updateUserPoints(post.author.toString(), 2);
       });
 
-      // Only send notification if it's not the user's own post
+
       if (post.author.toString() !== req.user._id.toString()) {
-        // Check if a like notification already exists from this user for this post
+
         const existingNotification = await Notification.findOne({
           recipient: post.author,
           sender: req.user._id,
@@ -276,7 +267,7 @@ export const likePost = async (
         });
 
         if (!existingNotification) {
-          // Create a new notification only if one doesn't already exist
+
           const notification = await createNotification({
             recipient: post.author,
             sender: req.user._id,
@@ -284,16 +275,16 @@ export const likePost = async (
             post: post._id as Types.ObjectId,
           });
 
-          // Emit the new notification (original code)
+
           req.app.get("io").to(post.author.toString()).emit("newNotification");
 
-          // Get and emit the updated unread count with the correct event name and format
+
           const count = await Notification.countDocuments({
             recipient: post.author,
             read: false,
           });
 
-          // This is the key change - emit with the event name and format the frontend expects
+
           req.app
             .get("io")
             .to(post.author.toString())
@@ -305,12 +296,11 @@ export const likePost = async (
     await post.save();
     res.json({ liked: !alreadyLiked, likeCount: post.likes.length });
   } catch (error) {
-    console.error("Like post error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Vote on a poll
+
 export const votePoll = async (
   req: CustomRequest,
   res: Response
@@ -348,12 +338,11 @@ export const votePoll = async (
 
     res.json({ voted: true, results });
   } catch (error) {
-    console.error("Vote poll error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Delete a post
+
 export const deletePost = async (
   req: CustomRequest,
   res: Response
@@ -378,43 +367,42 @@ export const deletePost = async (
       return;
     }
 
-    // Store image URL and author ID for background deletion
+
     const imageUrl = post.image;
     const authorId = post.author.toString();
     const postId = post._id.toString();
 
-    // Delete from database first
+
 
     await Post.findByIdAndDelete(post._id);
 
-    // Emit socket event to the post author only
+
     req.app.get("io").to(authorId).emit("postDeleted", {
       postId: postId,
       message: "Your post has been deleted successfully",
     });
 
-    // Send response immediately
+
     res.json({ message: "Post deleted successfully" });
 
-    // Handle background tasks
+
     setImmediate(() => {
-      // Update user points
+
       updateUserPoints(authorId, -5);
       Comment.deleteMany({ post: post._id });
       Notification.deleteMany({ post: post._id });
 
-      // Delete image from Cloudinary if exists
+
       if (imageUrl) {
         deleteImageFromBunnyStorage(imageUrl);
       }
     });
   } catch (error) {
-    console.error("Delete post error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Get logged-in user's own posts with pagination
+
 export const getMyPosts = async (
   req: CustomRequest,
   res: Response
@@ -444,7 +432,6 @@ export const getMyPosts = async (
       currentPage: page,
     });
   } catch (error) {
-    console.error("Get my posts error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

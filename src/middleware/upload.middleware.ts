@@ -1,13 +1,13 @@
 
 
-// src/middleware/upload.middleware.ts
+
 import multer from 'multer';
 import path from 'path';
 
-// Configure multer for memory storage
+
 const storage = multer.memoryStorage();
 
-// Filter for accepting only image files (for the original upload middleware)
+
 const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const filetypes = /jpeg|jpg|png|gif/;
   const mimetype = filetypes.test(file.mimetype);
@@ -19,16 +19,16 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
   cb(new Error('Only image files are allowed!'));
 };
 
-// Setup original upload middleware (keep this for backward compatibility)
+
 export const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter
 });
 
-// Combined filter for lesson files (images and resources)
+
 const lessonFileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  // Check if it's an image file
+
   if (file.fieldname.startsWith('imageFiles[')) {
     const imageTypes = /jpeg|jpg|png|gif/;
     const mimetype = imageTypes.test(file.mimetype);
@@ -40,7 +40,7 @@ const lessonFileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFi
     return cb(new Error('Only image files (jpeg, jpg, png, gif) are allowed for images!'));
   }
   
-  // Check if it's a resource file
+
   if (file.fieldname.startsWith('resourceFiles[')) {
     const resourceTypes = /pdf|doc|docx|xls|xlsx|ppt|pptx/;
     const mimetype = file.mimetype.includes('pdf') || 
@@ -59,11 +59,11 @@ const lessonFileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFi
     return cb(new Error('Only PDF, DOC, XLS, or PPT files are allowed for resources!'));
   }
 
-  // If it's neither image nor resource file, reject it
+
   cb(new Error('Invalid field name for file upload!'));
 };
 
-// Setup lesson files upload middleware - FIXED: Use .any() instead of .array('files')
+
 export const uploadLessonFiles = multer({
   storage,
   limits: { 

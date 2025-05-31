@@ -1,4 +1,4 @@
-// src/models/Admin.model.ts
+
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IAdmin extends Document {
