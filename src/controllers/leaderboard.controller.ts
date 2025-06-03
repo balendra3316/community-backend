@@ -5,6 +5,8 @@ import PointsHistory from "../models/PointsHistory.model";
 import mongoose from "mongoose";
 
 
+
+
 export const getAllTimeLeaderboard = async (
   req: Request,
   res: Response
@@ -13,36 +15,16 @@ export const getAllTimeLeaderboard = async (
     const userId = new mongoose.Types.ObjectId(req.user?._id);
     const limit = parseInt(req.query.limit as string) || 10;
 
-
     const [leaderboardData, userRankData] = await Promise.all([
-
+      // Get top users with points > 0
       User.aggregate([
+        { $match: { points: { $gt: 0 } } }, // Filter out users with 0 points
         { $sort: { points: -1 } },
         { $limit: limit },
         { $project: { name: 1, avatar: 1, points: 1 } },
-        {
-          $addFields: {
-            rank: {
-              $add: [
-                {
-                  $indexOfArray: [
-                    { $range: [0, limit] },
-                    {
-                      $subtract: [
-                        { $indexOfArray: [{ $range: [0, limit] }, 0] },
-                        0,
-                      ],
-                    },
-                  ],
-                },
-                1,
-              ],
-            },
-          },
-        },
       ]),
 
-
+      // Get user's rank among all users with points > 0
       User.aggregate([
         {
           $facet: {
@@ -51,7 +33,7 @@ export const getAllTimeLeaderboard = async (
               { $project: { name: 1, avatar: 1, points: 1 } },
             ],
             rank: [
-              { $match: { points: { $exists: true } } },
+              { $match: { points: { $gt: 0 } } }, // Only consider users with points > 0 for ranking
               { $sort: { points: -1 } },
               {
                 $group: {
@@ -68,14 +50,19 @@ export const getAllTimeLeaderboard = async (
       ]),
     ]);
 
-
     const leaderboard = leaderboardData.map((user, index) => ({
       ...user,
       rank: index + 1,
     }));
 
     const user = userRankData[0]?.user[0];
-    const userRank = userRankData[0]?.rank[0]?.rank || null;
+    const userPoints = user?.points || 0;
+    let userRank = userRankData[0]?.rank[0]?.rank || null;
+
+    // If user has 0 points, they don't get a rank
+    if (userPoints === 0) {
+      userRank = null;
+    }
 
     const response = {
       leaderboard,
@@ -83,7 +70,7 @@ export const getAllTimeLeaderboard = async (
         _id: userId,
         name: user?.name || "",
         avatar: user?.avatar || "",
-        points: user?.points || 0,
+        points: userPoints,
         rank: userRank,
       },
     };
@@ -93,6 +80,8 @@ export const getAllTimeLeaderboard = async (
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
 
 
 export const getWeeklyLeaderboard = async (
