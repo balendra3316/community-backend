@@ -2,47 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface IUser extends Document {
@@ -55,8 +14,10 @@ export interface IUser extends Document {
   badges: string[];
   bio: string;
   points: number;
+  myPurchasedCourses: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
+  hasPurchasedCourse(courseId: string | Types.ObjectId): boolean;
 }
 
 const UserSchema: Schema = new Schema(
@@ -65,15 +26,15 @@ const UserSchema: Schema = new Schema(
       type: String, 
       required: true, 
       unique: true,
-      index: true // Add index for faster lookups
+      index: true
     },
     email: { 
       type: String, 
       required: true, 
       unique: true,
-      lowercase: true, // Normalize email to lowercase
+      lowercase: true,
       trim: true,
-      index: true // Add index for faster lookups
+      index: true
     },
     name: { 
       type: String, 
@@ -86,7 +47,7 @@ const UserSchema: Schema = new Schema(
       default: '',
       validate: {
         validator: function(v: string) {
-          return !v || /^https?:\/\//.test(v); // Validate URL format if provided
+          return !v || /^https?:\/\//.test(v);
         },
         message: 'Avatar must be a valid URL'
       }
@@ -94,7 +55,7 @@ const UserSchema: Schema = new Schema(
     isAdmin: { 
       type: Boolean, 
       default: false,
-      index: true // Add index for admin queries
+      index: true
     },
     badges: [{ 
       type: String,
@@ -110,22 +71,20 @@ const UserSchema: Schema = new Schema(
       type: Number, 
       default: 0,
       min: [0, 'Points cannot be negative'],
-      index: true // Add index for leaderboard queries
-    }
+      index: true
+    },
+    myPurchasedCourses: [{
+      type: Schema.Types.ObjectId,
+      ref: 'Course'
+    }]
   },
   { 
     timestamps: true,
-
-    versionKey: false,
-
-    index: [
-      { email: 1, googleId: 1 }, // For authentication queries
-      { points: -1, createdAt: -1 } // For leaderboard queries
-    ]
+    versionKey: false
   }
 );
 
-
+// Indexes
 UserSchema.index({ 
   name: 'text', 
   bio: 'text' 
@@ -133,27 +92,27 @@ UserSchema.index({
   name: 'user_search_index'
 });
 
+UserSchema.index({ email: 1, googleId: 1 });
+UserSchema.index({ points: -1, createdAt: -1 });
 
+// Pre-save middleware
 UserSchema.pre('save', function(next) {
-
-  if (this.email && typeof this.email==='string') {
+  if (this.email && typeof this.email === 'string') {
     this.email = this.email.toLowerCase();
   }
   
-
-  if (this.name && typeof this.name==='string') {
+  if (this.name && typeof this.name === 'string') {
     this.name = this.name.trim();
   }
   
-
-  if (this.bio && typeof this.bio==='string') {
+  if (this.bio && typeof this.bio === 'string') {
     this.bio = this.bio.trim();
   }
   
   next();
 });
 
-
+// Static methods
 UserSchema.statics.findByEmailOrGoogleId = function(email: string, googleId?: string) {
   const query: any = { email: email.toLowerCase() };
   if (googleId) {
@@ -165,11 +124,17 @@ UserSchema.statics.findByEmailOrGoogleId = function(email: string, googleId?: st
   return this.findOne(query).lean();
 };
 
-
+// Instance methods
 UserSchema.methods.toSafeObject = function() {
   const userObject = this.toObject();
   delete userObject.__v;
   return userObject;
+};
+
+UserSchema.methods.hasPurchasedCourse = function(courseId: string | Types.ObjectId) {
+  return this.myPurchasedCourses.some((purchasedId: Types.ObjectId) => 
+    purchasedId.toString() === courseId.toString()
+  );
 };
 
 export default mongoose.model<IUser>('User', UserSchema);

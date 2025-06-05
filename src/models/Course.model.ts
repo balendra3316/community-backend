@@ -1,4 +1,5 @@
 
+
 import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface ICourse extends Document {
@@ -7,6 +8,8 @@ export interface ICourse extends Document {
   description: string;
   coverImage: string;
   order: number;
+  isPaid:boolean;
+  price:number;
   totalLessons:number
   createdAt: Date;
   updatedAt: Date;
@@ -19,6 +22,8 @@ const CourseSchema: Schema = new Schema(
     description: { type: String },
     coverImage: { type: String },
     order: { type: Number, default: 0 },
+    isPaid:{type:Boolean, default:false},
+    price:{type:Number, default:0, min: [0, 'Price cannot be negative']},
     totalLessons:{type:Number, default:0},
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' }
   },
@@ -26,3 +31,25 @@ const CourseSchema: Schema = new Schema(
 );
 
 export default mongoose.model<ICourse>('Course', CourseSchema);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

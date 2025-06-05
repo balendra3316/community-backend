@@ -17,7 +17,7 @@ import {
 } from '../controllers/admin/admin.controller';
 import { protectAdminRoute } from '../middleware/adminauth.middleware';
 import { upload, uploadLessonFiles } from '../middleware/upload.middleware';
-import { getAllCourses, getCourseDetails } from '../controllers/course.controller';
+import { getAllCourses, getAllCoursesAdmin,  getCourseDetails, getCourseDetailsAdmin } from '../controllers/course.controller';
 
 
 const router = express.Router();
@@ -26,8 +26,8 @@ const router = express.Router();
 
 
 
-router.get('/courses', getAllCourses);
-router.get('/courses/:courseId', getCourseDetails);
+router.get('/courses', getAllCoursesAdmin);
+router.get('/courses/:courseId', getCourseDetailsAdmin);
 router.post('/courses',protectAdminRoute,upload.single('coverImage'), createCourse);
 router.put('/courses/:courseId',protectAdminRoute,upload.single('coverImage'), updateCourse);
 router.delete('/courses/:courseId',protectAdminRoute, deleteCourse);

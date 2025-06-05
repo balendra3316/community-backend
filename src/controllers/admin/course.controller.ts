@@ -10,22 +10,22 @@ import { BunnyStorageService } from '../../services/bunnyStorage.service'; // Ad
 import { deleteImageFromBunnyStorage } from '../post.controller'; // Adjust path as needed
 
 
-
-
-
 export const createCourse = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { title, description, order } = req.body;
+    const { title, description, order, isPaid = false, price = 0 } = req.body;
     const userId = req.user?._id;
     
     if (!title) {
       res.status(400).json({ message: 'Course title is required' });
       return;
     }
+
+    // Ensure price is a whole number
+    const roundedPrice = Math.round(Number(price));
 
     let coverImage = '';
     if (req.file) {
@@ -47,6 +47,8 @@ export const createCourse = async (
       coverImage,
       order: order || 0,
       createdBy: userId,
+      isPaid: Boolean(isPaid), // Save exactly as true/false
+      price: roundedPrice      // Always save as whole number
     });
 
     res.status(201).json(newCourse);
@@ -54,8 +56,6 @@ export const createCourse = async (
     next(error);
   }
 };
-
-
 export const updateCourse = async (
   req: Request,
   res: Response,
@@ -63,7 +63,7 @@ export const updateCourse = async (
 ): Promise<void> => {
   try {
     const { courseId } = req.params;
-    const { title, description, order } = req.body;
+    const { title, description, order, isPaid, price } = req.body;
     
     if (!mongoose.Types.ObjectId.isValid(courseId)) {
       res.status(400).json({ message: 'Invalid course ID' });
@@ -76,15 +76,29 @@ export const updateCourse = async (
       return;
     }
 
+    // Update isPaid status if provided
+    if (isPaid !== undefined) {
+      course.isPaid = isPaid;
+    }
 
-    const oldCoverImage = course.coverImage;
+    // Validate price only if course is being set as paid
+    if (isPaid === true && (price === undefined || price === null || isNaN(price) || price < 0)) {
+      res.status(400).json({ message: 'Valid price is required when setting course as paid' });
+      return;
+    }
 
+    // Update price if provided (regardless of isPaid status)
+    if (price !== undefined) {
+      course.price = Number(price);
+    }
 
+    // Update other fields
     if (title) course.title = title;
     if (description !== undefined) course.description = description;
     if (order !== undefined) course.order = order;
 
-
+    // Handle cover image update
+    const oldCoverImage = course.coverImage;
     if (req.file) {
       try {
         const newCoverImage = await BunnyStorageService.uploadImage(
@@ -102,18 +116,15 @@ export const updateCourse = async (
     await course.save();
     res.status(200).json(course);
 
-
     if (req.file && oldCoverImage) {
       setImmediate(() => {
         deleteImageFromBunnyStorage(oldCoverImage);
       });
     }
-
   } catch (error) {
     next(error);
   }
 };
-
 
 export const deleteCourse = async (
   req: Request,

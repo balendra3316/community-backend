@@ -120,6 +120,7 @@ import passport from "./config/passport";
 import { notFound, errorHandler } from "./middleware/error.middleware";
 import { setupSocketIO } from "./socket";
 
+
 import authRoutes from "./routes/auth.routes";
 import postRoutes from "./routes/post.routes";
 import commentRoutes from "./routes/comment.routes";
@@ -137,6 +138,18 @@ connectDB();
 
 const app = express();
 const server = http.createServer(app);
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 const corsOptions = {
