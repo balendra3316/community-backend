@@ -13,6 +13,11 @@ interface IImage {
   altText?: string;
 }
 
+interface IUrl {
+  title: string;
+  url: string;
+}
+
 export interface ILesson extends Document {
   _id: Types.ObjectId;
   title: string;
@@ -24,6 +29,7 @@ export interface ILesson extends Document {
   videoDuration?: number;
   resources: IResource[];
   images: IImage[];
+  urls: IUrl[];
   order: number;
   isPublished: boolean;
   createdAt: Date;
@@ -52,6 +58,12 @@ const LessonSchema: Schema = new Schema(
         url: { type: String },
         caption: { type: String },
         altText: { type: String }
+      }
+    ],
+    urls: [
+      {
+        title: { type: String },
+        url: { type: String }
       }
     ],
     order: { type: Number, required: true },

@@ -140,6 +140,9 @@ export const getAllCourses = async (
   }
 };
 
+
+
+
 export const getCourseDetails = async (
   req: Request,
   res: Response,
