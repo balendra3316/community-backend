@@ -369,37 +369,37 @@ export const deletePost = async (
       return;
     }
 
-    // Store these values before deletion
+
     const imageUrl = post.image;
     const authorId = post.author.toString();
     const postId = post._id.toString();
 
-    // Delete the post first
+
     await Post.findByIdAndDelete(post._id);
 
-    // Emit socket event
+
     req.app.get("io").to(authorId).emit("postDeleted", {
       postId: postId,
       message: "Your post has been deleted successfully",
     });
 
-    // Send response
+
     res.json({ message: "Post deleted successfully" });
 
-    // Handle cleanup operations asynchronously
+
     setImmediate(async () => {
       try {
-        // Update user points
+
         await updateUserPoints(authorId, -5);
         
-        // Delete related comments - using postId instead of post._id
+
         await Comment.deleteMany({ post: postId });
         
-        // Delete related notifications - using postId instead of post._id
+
         const deletedNotifications = await Notification.deleteMany({ post: postId });
         
         
-        // Delete image from storage
+
         if (imageUrl) {
           await deleteImageFromBunnyStorage(imageUrl);
         }

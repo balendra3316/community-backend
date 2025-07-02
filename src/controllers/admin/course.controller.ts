@@ -24,7 +24,7 @@ export const createCourse = async (
       return;
     }
 
-    // Ensure price is a whole number
+
     const roundedPrice = Math.round(Number(price));
 
     let coverImage = '';
@@ -76,28 +76,28 @@ export const updateCourse = async (
       return;
     }
 
-    // Update isPaid status if provided
+
     if (isPaid !== undefined) {
       course.isPaid = isPaid;
     }
 
-    // Validate price only if course is being set as paid
+
     if (isPaid === true && (price === undefined || price === null || isNaN(price) || price < 0)) {
       res.status(400).json({ message: 'Valid price is required when setting course as paid' });
       return;
     }
 
-    // Update price if provided (regardless of isPaid status)
+
     if (price !== undefined) {
       course.price = Number(price);
     }
 
-    // Update other fields
+
     if (title) course.title = title;
     if (description !== undefined) course.description = description;
     if (order !== undefined) course.order = order;
 
-    // Handle cover image update
+
     const oldCoverImage = course.coverImage;
     if (req.file) {
       try {

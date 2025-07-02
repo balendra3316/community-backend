@@ -45,7 +45,7 @@ export const createLessonInCourse = async (
       lessonOrder = highestOrder ? highestOrder.order + 1 : 0;
     }
 
-    // Process existing images
+
     const processedImages = [];
     const parsedImages = Array.isArray(images) ? images : JSON.parse(images || '[]');
 
@@ -59,7 +59,7 @@ export const createLessonInCourse = async (
       }
     }
 
-    // Process uploaded image files
+
     if (req.files) {
       const imageFiles = (req.files as Express.Multer.File[]).filter(file => 
         file.fieldname.startsWith('imageFiles[')
@@ -87,7 +87,7 @@ export const createLessonInCourse = async (
       }
     }
 
-    // Process existing resources
+
     const processedResources = [];
     const parsedResources = Array.isArray(resources) ? resources : JSON.parse(resources || '[]');
 
@@ -101,7 +101,7 @@ export const createLessonInCourse = async (
       }
     }
 
-    // Process uploaded resource files
+
     if (req.files) {
       const resourceFiles = (req.files as Express.Multer.File[]).filter(file => 
         file.fieldname.startsWith('resourceFiles[')
@@ -141,7 +141,7 @@ export const createLessonInCourse = async (
     }
 
    
-    // Process URLs
+
 const processedUrls = [];
 let parsedUrls = [];
 
@@ -151,11 +151,11 @@ try {
   } else if (typeof urls === 'string') {
     parsedUrls = JSON.parse(urls || '[]');
   } else if (urls && typeof urls === 'object') {
-    // Handle case where urls is sent as form data object
+
     parsedUrls = Object.values(urls);
   }
 } catch (error) {
-  console.error('Error parsing URLs:', error);
+  
   parsedUrls = [];
 }
 
@@ -231,7 +231,7 @@ export const createLessonInSection = async (
       lessonOrder = highestOrder ? highestOrder.order + 1 : 0;
     }
 
-    // Process existing images
+
     const processedImages = [];
     const parsedImages = Array.isArray(images) ? images : JSON.parse(images || '[]');
 
@@ -245,7 +245,7 @@ export const createLessonInSection = async (
       }
     }
 
-    // Process uploaded image files
+
     if (req.files) {
       const imageFiles = (req.files as Express.Multer.File[]).filter(file => 
         file.fieldname.startsWith('imageFiles[')
@@ -273,7 +273,7 @@ export const createLessonInSection = async (
       }
     }
 
-    // Process existing resources
+
     const processedResources = [];
     const parsedResources = Array.isArray(resources) ? resources : JSON.parse(resources || '[]');
 
@@ -287,7 +287,7 @@ export const createLessonInSection = async (
       }
     }
 
-    // Process uploaded resource files
+
     if (req.files) {
       const resourceFiles = (req.files as Express.Multer.File[]).filter(file => 
         file.fieldname.startsWith('resourceFiles[')
@@ -331,7 +331,7 @@ export const createLessonInSection = async (
 
 
     
-    // Process URLs
+
 const processedUrls = [];
 let parsedUrls = [];
 
@@ -341,11 +341,11 @@ try {
   } else if (typeof urls === 'string') {
     parsedUrls = JSON.parse(urls || '[]');
   } else if (urls && typeof urls === 'object') {
-    // Handle case where urls is sent as form data object
+
     parsedUrls = Object.values(urls);
   }
 } catch (error) {
-  console.error('Error parsing URLs:', error);
+  
   parsedUrls = [];
 }
 
@@ -409,7 +409,7 @@ export const updateLesson = async (
       return;
     }
 
-    // Handle section change
+
     if (sectionId !== undefined) {
       if (sectionId && mongoose.Types.ObjectId.isValid(sectionId)) {
         const section = await Section.findById(sectionId);
@@ -427,16 +427,16 @@ export const updateLesson = async (
       }
     }
 
-    // Handle images update
+
     if (images !== undefined) {
-      // Delete old images from storage
+
       if (lesson.images && lesson.images.length > 0) {
         for (const oldImage of lesson.images) {
           if (oldImage.url && oldImage.url.includes('bunnycdn.com')) {
             try {
               await BunnyStorageService.deleteFile(oldImage.url);
             } catch (error) {
-              // Continue even if deletion fails
+
             }
           }
         }
@@ -455,7 +455,7 @@ export const updateLesson = async (
         }
       }
 
-      // Process uploaded image files
+
       if (req.files) {
         const imageFiles = (req.files as Express.Multer.File[]).filter(file => 
           file.fieldname.startsWith('imageFiles[')
@@ -486,16 +486,16 @@ export const updateLesson = async (
       lesson.images = processedImages;
     }
 
-    // Handle resources update
+
     if (resources !== undefined) {
-      // Delete old resources from storage
+
       if (lesson.resources && lesson.resources.length > 0) {
         for (const oldResource of lesson.resources) {
           if (oldResource.fileUrl && oldResource.fileUrl.includes('bunnycdn.com')) {
             try {
               await BunnyStorageService.deleteFile(oldResource.fileUrl);
             } catch (error) {
-              // Continue even if deletion fails
+
             }
           }
         }
@@ -514,7 +514,7 @@ export const updateLesson = async (
         }
       }
 
-      // Process uploaded resource files
+
       if (req.files) {
         const resourceFiles = (req.files as Express.Multer.File[]).filter(file => 
           file.fieldname.startsWith('resourceFiles[')
@@ -559,7 +559,7 @@ export const updateLesson = async (
     
 
 
-// Process URLs
+
 const processedUrls = [];
 let parsedUrls = [];
 
@@ -569,11 +569,11 @@ try {
   } else if (typeof urls === 'string') {
     parsedUrls = JSON.parse(urls || '[]');
   } else if (urls && typeof urls === 'object') {
-    // Handle case where urls is sent as form data object
+
     parsedUrls = Object.values(urls);
   }
 } catch (error) {
-  console.error('Error parsing URLs:', error);
+  
   parsedUrls = [];
 }
 
@@ -596,7 +596,7 @@ if (urls !== undefined) {
 
 
 
-    // Update other fields
+
     if (title !== undefined) lesson.title = title;
     if (content !== undefined) lesson.content = content;
     if (videoUrl !== undefined) lesson.videoUrl = videoUrl;

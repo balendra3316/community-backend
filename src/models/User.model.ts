@@ -84,7 +84,7 @@ const UserSchema: Schema = new Schema(
   }
 );
 
-// Indexes
+
 UserSchema.index({ 
   name: 'text', 
   bio: 'text' 
@@ -95,7 +95,7 @@ UserSchema.index({
 UserSchema.index({ email: 1, googleId: 1 });
 UserSchema.index({ points: -1, createdAt: -1 });
 
-// Pre-save middleware
+
 UserSchema.pre('save', function(next) {
   if (this.email && typeof this.email === 'string') {
     this.email = this.email.toLowerCase();
@@ -112,7 +112,7 @@ UserSchema.pre('save', function(next) {
   next();
 });
 
-// Static methods
+
 UserSchema.statics.findByEmailOrGoogleId = function(email: string, googleId?: string) {
   const query: any = { email: email.toLowerCase() };
   if (googleId) {
@@ -124,7 +124,7 @@ UserSchema.statics.findByEmailOrGoogleId = function(email: string, googleId?: st
   return this.findOne(query).lean();
 };
 
-// Instance methods
+
 UserSchema.methods.toSafeObject = function() {
   const userObject = this.toObject();
   delete userObject.__v;

@@ -49,7 +49,7 @@ router.delete('/lessons/:lessonId',protectAdminRoute, deleteLesson);
 router.post('/login', adminLogin);
 router.get('/me', protectAdminRoute, getCurrentAdmin);
 router.post('/logout', protectAdminRoute, adminLogout);
-// router.post('/setup',createInitialAdmin)
+
 
 
 

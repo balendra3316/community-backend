@@ -20,7 +20,7 @@ export const getAllCourses = async (
     const userId = req.user?._id;
 
     if (!userId) {
-      // For non-authenticated users, only return free courses
+
       const courses = await Course.find({ isPaid: false }).sort({ order: 1 });
       const coursesWithPayment = courses.map(course => ({
         ...course.toObject(),
@@ -32,7 +32,7 @@ export const getAllCourses = async (
       return;
     }
 
-    // Get user's purchased courses
+
     const user = await User.findById(userId);
     const purchasedCourseIds = user?.myPurchasedCourses || [];
 
@@ -118,7 +118,7 @@ export const getAllCourses = async (
       },
     ]);
 
-    // Add payment and access information
+
     const coursesWithAccessInfo = coursesWithProgress.map(course => {
       const courseId = course._id.toString();
       const isPurchased = purchasedCourseIds.some((id: mongoose.Types.ObjectId) => 
@@ -163,7 +163,7 @@ export const getCourseDetails = async (
       return;
     }
 
-    // Check if user has access to this course
+
     let hasAccess = false;
     let needsPayment = false;
 
@@ -177,7 +177,7 @@ export const getCourseDetails = async (
       needsPayment = true;
     }
 
-    // If user doesn't have access to paid course, return limited info
+
     if (!hasAccess && course.isPaid) {
       res.status(200).json({
         _id: course._id,
@@ -294,8 +294,8 @@ export const purchaseCourse = async (
     const { courseId, paymentAmount, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
     const userId = req.user?._id;
 
-    console.log('Purchase request body:', req.body); // Debug log
-    console.log('User ID:', userId); // Debug log
+
+
 
     if (!userId) {
       res.status(401).json({ message: "Authentication required" });
@@ -307,7 +307,7 @@ export const purchaseCourse = async (
       return;
     }
 
-    // Validate required payment fields - be more flexible with signature for test mode
+
     if (!paymentAmount || !razorpayPaymentId) {
       res.status(400).json({ 
         message: "Missing required payment information",
@@ -319,7 +319,7 @@ export const purchaseCourse = async (
       return;
     }
 
-    // Get course details
+
     const course = await Course.findById(courseId);
     if (!course) {
       res.status(404).json({ message: "Course not found" });
@@ -331,7 +331,7 @@ export const purchaseCourse = async (
       return;
     }
 
-    // More flexible payment amount validation (handle floating point precision)
+
     const expectedAmount = course.price;
     const receivedAmount = paymentAmount;
     
@@ -344,21 +344,21 @@ export const purchaseCourse = async (
       return;
     }
 
-    // Get user details
+
     const user = await User.findById(userId);
     if (!user) {
       res.status(404).json({ message: "User not found" });
       return;
     }
 
-    // Check if user already purchased this course
+
     if (user.hasPurchasedCourse(courseId)) {
       res.status(400).json({ message: "Course already purchased" });
       return;
     }
 
-    // For production, you should verify Razorpay signature
-    // For now, we'll skip signature verification for testing
+
+
     if (process.env.NODE_ENV === 'production' && razorpaySignature) {
       const crypto = require('crypto');
       const expectedSignature = crypto
@@ -372,7 +372,7 @@ export const purchaseCourse = async (
       }
     }
 
-    // Create payment record
+
     const payment = new Payment({
       userId,
       courseId,
@@ -386,15 +386,11 @@ export const purchaseCourse = async (
 
     await payment.save();
 
-    // Add course to user's purchased courses
+
     user.myPurchasedCourses.push(new mongoose.Types.ObjectId(courseId));
     await user.save();
 
-    console.log('Course purchased successfully:', {
-      userId,
-      courseId,
-      paymentId: payment._id
-    }); // Debug log
+  
 
     res.status(200).json({
       message: "Course purchased successfully",
@@ -404,7 +400,7 @@ export const purchaseCourse = async (
     });
 
   } catch (error) {
-    console.error('Purchase course error:', error); // Debug log
+    
     next(error);
   }
 };

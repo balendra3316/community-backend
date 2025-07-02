@@ -16,7 +16,7 @@ export const getAllTimeLeaderboard = async (
     const limit = parseInt(req.query.limit as string) || 10;
 
     const [leaderboardData, userRankData] = await Promise.all([
-      // Get top users with points > 0
+
       User.aggregate([
         { $match: { points: { $gt: 0 } } }, // Filter out users with 0 points
         { $sort: { points: -1 } },
@@ -24,7 +24,7 @@ export const getAllTimeLeaderboard = async (
         { $project: { name: 1, avatar: 1, points: 1 } },
       ]),
 
-      // Get user's rank among all users with points > 0
+
       User.aggregate([
         {
           $facet: {
@@ -59,7 +59,7 @@ export const getAllTimeLeaderboard = async (
     const userPoints = user?.points || 0;
     let userRank = userRankData[0]?.rank[0]?.rank || null;
 
-    // If user has 0 points, they don't get a rank
+
     if (userPoints === 0) {
       userRank = null;
     }
