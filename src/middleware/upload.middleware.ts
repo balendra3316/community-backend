@@ -1,6 +1,4 @@
 
-
-
 import multer from 'multer';
 import path from 'path';
 
@@ -22,7 +20,7 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
 
 export const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, 
+  limits: { fileSize: 20 * 1024 * 1024 }, 
   fileFilter
 });
 

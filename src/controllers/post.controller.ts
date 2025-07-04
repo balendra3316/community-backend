@@ -66,6 +66,8 @@ export const updateUserPoints = async (
 };
 
 
+
+
 export const createPost = async (
   req: CustomRequest,
   res: Response
@@ -76,9 +78,8 @@ export const createPost = async (
       return;
     }
 
-    const { title, content, youtubeLink, tags, poll } = req.body;
+    const { title, content, youtubeLink, tags, poll, links } = req.body; // Added 'links'
     let image = "";
-
 
     if (req.file) {
       try {
@@ -92,7 +93,6 @@ export const createPost = async (
         return;
       }
     }
-
 
     let pollData;
     if (poll) {
@@ -111,30 +111,27 @@ export const createPost = async (
       }
     }
 
-
     const post = new Post({
       author: req.user._id,
       title,
       content,
       image,
       youtubeLink,
+      links: links ? links.split(",").map((link: string) => link.trim()) : [], // Added this line
       tags: tags ? tags.split(",").map((tag: string) => tag.trim()) : [],
       poll: pollData,
     });
 
     const savedPost = await post.save();
 
-
     setImmediate(() => {
       updateUserPoints(req.user!._id.toString(), 5);
     });
-
 
     const populatedPost = await Post.findById(savedPost._id).populate(
       "author",
       "name avatar"
     );
-
 
     req.app.get("io").emit("newPost", populatedPost);
     req.app.get("io").to(req.user._id.toString()).emit("userPostCreated", {
@@ -147,6 +144,14 @@ export const createPost = async (
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+
+
+
+
+
+
 
 
 export const getPosts = async (req: Request, res: Response): Promise<void> => {

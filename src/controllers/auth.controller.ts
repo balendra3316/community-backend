@@ -184,7 +184,7 @@ export const updateProfile = async (
     if (req.file) {
       try {
 
-        if (req.file.size > 5 * 1024 * 1024) {
+        if (req.file.size > 20 * 1024 * 1024) {
           res
             .status(400)
             .json({ message: "Avatar file too large. Maximum size is 5MB." });

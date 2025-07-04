@@ -11,12 +11,13 @@ export interface IPost extends Document {
   title: string;
   content: string;
   image?: string;
+  links: string[];
   youtubeLink?: string;
   tags: string[];
   likes: mongoose.Types.ObjectId[];
   poll?: IPoll;
   isPinned: boolean;
-  totalComments: number;  // Add this field
+  totalComments: number;  
   createdAt: Date;
   updatedAt: Date;
   lastComment:Date
@@ -28,6 +29,7 @@ const PostSchema: Schema = new Schema(
     title: { type: String, required: true },
     content: { type: String, required: true },
     image: { type: String },
+    links: [{type:String}],
     youtubeLink: { type: String },
     tags: [{ type: String }],
     likes: [{ type: Schema.Types.ObjectId, ref: 'User' }],
