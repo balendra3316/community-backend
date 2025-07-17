@@ -18,6 +18,7 @@ import {
 import { protectAdminRoute } from '../middleware/adminauth.middleware';
 import { upload, uploadLessonFiles } from '../middleware/upload.middleware';
 import { getAllCourses, getAllCoursesAdmin,  getCourseDetails, getCourseDetailsAdmin } from '../controllers/course.controller';
+import { deletePostByAdmin, togglePinPost } from '../controllers/admin/adminpostController';
 
 
 const router = express.Router();
@@ -52,6 +53,8 @@ router.post('/logout', protectAdminRoute, adminLogout);
 
 
 
+router.delete('/posts/:postId', protectAdminRoute, deletePostByAdmin);
+router.patch('/posts/:postId/toggle-pin', protectAdminRoute, togglePinPost);
 
 
 

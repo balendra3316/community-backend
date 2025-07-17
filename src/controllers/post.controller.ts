@@ -1,4 +1,3 @@
-
 import { Request, Response } from "express";
 import Post from "../models/Post.model";
 import Comment from "../models/Comment.model";
@@ -20,14 +19,17 @@ export const deleteImageFromBunnyStorage = async (
   imageUrl: string
 ): Promise<void> => {
   try {
-   if (imageUrl && bunnyConfig.cdnUrl && imageUrl.includes(bunnyConfig.cdnUrl)) {
+    if (
+      imageUrl &&
+      bunnyConfig.cdnUrl &&
+      imageUrl.includes(bunnyConfig.cdnUrl)
+    ) {
       const deleted = await BunnyStorageService.deleteFile(imageUrl);
       if (deleted) {
       } else {
       }
     }
-  } catch (error) {
-  }
+  } catch (error) {}
 };
 
 export const updateUserPoints = async (
@@ -36,37 +38,27 @@ export const updateUserPoints = async (
 ): Promise<void> => {
   try {
     if (delta < 0) {
-
       const user = await User.findById(userId);
       if (!user) return;
 
-
       const actualDelta = Math.max(-user.points, delta);
 
-
       await User.findByIdAndUpdate(userId, { $inc: { points: actualDelta } });
-
 
       await PointsHistory.create({
         userId,
         points: delta, // Store the original negative value for reporting purposes
       });
     } else {
-
       await User.findByIdAndUpdate(userId, { $inc: { points: delta } });
-
 
       await PointsHistory.create({
         userId,
         points: delta,
       });
     }
-  } catch (error) {
-  }
+  } catch (error) {}
 };
-
-
-
 
 export const createPost = async (
   req: CustomRequest,
@@ -145,15 +137,6 @@ export const createPost = async (
   }
 };
 
-
-
-
-
-
-
-
-
-
 export const getPosts = async (req: Request, res: Response): Promise<void> => {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -161,21 +144,15 @@ export const getPosts = async (req: Request, res: Response): Promise<void> => {
     const skip = (page - 1) * limit;
     const filter = (req.query.filter as string) || "default"; // Can be 'default', 'oldNew', or 'popular'
 
-
     const baseQuery = Post.find();
 
-
     if (filter === "oldNew") {
-
       baseQuery.sort({ isPinned: -1, createdAt: 1 });
     } else if (filter === "popular") {
-
       baseQuery.sort({ isPinned: -1, likes: -1, views: -1, createdAt: -1 });
     } else {
-
       baseQuery.sort({ isPinned: -1, createdAt: -1 });
     }
-
 
     const posts = await baseQuery
       .skip(skip)
@@ -195,7 +172,6 @@ export const getPosts = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 export const getPost = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -229,7 +205,6 @@ export const getPost = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-
 export const likePost = async (
   req: CustomRequest,
   res: Response
@@ -261,9 +236,7 @@ export const likePost = async (
         updateUserPoints(post.author.toString(), 2);
       });
 
-
       if (post.author.toString() !== req.user._id.toString()) {
-
         const existingNotification = await Notification.findOne({
           recipient: post.author,
           sender: req.user._id,
@@ -272,7 +245,6 @@ export const likePost = async (
         });
 
         if (!existingNotification) {
-
           const notification = await createNotification({
             recipient: post.author,
             sender: req.user._id,
@@ -280,15 +252,12 @@ export const likePost = async (
             post: post._id as Types.ObjectId,
           });
 
-
           req.app.get("io").to(post.author.toString()).emit("newNotification");
-
 
           const count = await Notification.countDocuments({
             recipient: post.author,
             read: false,
           });
-
 
           req.app
             .get("io")
@@ -304,7 +273,6 @@ export const likePost = async (
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 export const votePoll = async (
   req: CustomRequest,
@@ -347,9 +315,6 @@ export const votePoll = async (
   }
 };
 
-
-
-
 export const deletePost = async (
   req: CustomRequest,
   res: Response
@@ -374,53 +339,38 @@ export const deletePost = async (
       return;
     }
 
-
     const imageUrl = post.image;
     const authorId = post.author.toString();
     const postId = post._id.toString();
 
-
     await Post.findByIdAndDelete(post._id);
-
 
     req.app.get("io").to(authorId).emit("postDeleted", {
       postId: postId,
       message: "Your post has been deleted successfully",
     });
 
-
     res.json({ message: "Post deleted successfully" });
-
 
     setImmediate(async () => {
       try {
-
         await updateUserPoints(authorId, -5);
-        
 
         await Comment.deleteMany({ post: postId });
-        
 
-        const deletedNotifications = await Notification.deleteMany({ post: postId });
-        
-        
+        const deletedNotifications = await Notification.deleteMany({
+          post: postId,
+        });
 
         if (imageUrl) {
           await deleteImageFromBunnyStorage(imageUrl);
         }
-      } catch (cleanupError) {
-        
-      }
+      } catch (cleanupError) {}
     });
   } catch (error) {
-    
     res.status(500).json({ message: "Server error" });
   }
 };
-
-
-
-
 
 export const getMyPosts = async (
   req: CustomRequest,
@@ -450,6 +400,143 @@ export const getMyPosts = async (
       totalPages: Math.ceil(total / limit),
       currentPage: page,
     });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const updatePost = async (
+  req: CustomRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ message: "Not authenticated" });
+      return;
+    }
+
+    const { title, content, youtubeLink, tags, links, poll } = req.body;
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      res.status(404).json({ message: "Post not found" });
+      return;
+    }
+
+    if (
+      post.author.toString() !== req.user._id.toString() &&
+      !req.user.isAdmin
+    ) {
+      res.status(403).json({ message: "Not authorized" });
+      return;
+    }
+
+    let image = post.image;
+    if (req.file) {
+      try {
+        if (post.image) {
+          // You should have a function to delete the old image from Bunny Storage
+          // await deleteImageFromBunnyStorage(post.image);
+        }
+        image = await BunnyStorageService.uploadImage(
+          req.file.buffer,
+          req.file.originalname,
+          "community-posts"
+        );
+      } catch (uploadError) {
+        res.status(500).json({ message: "Image upload failed" });
+        return;
+      }
+    }
+
+    // Update standard fields
+    post.title = title || post.title;
+    post.content = content || post.content;
+    post.youtubeLink =
+      youtubeLink !== undefined ? youtubeLink : post.youtubeLink;
+    post.image = image;
+    post.links = links
+      ? links.split(",").map((link: string) => link.trim())
+      : post.links;
+    post.tags = tags
+      ? tags.split(",").map((tag: string) => tag.trim())
+      : post.tags;
+
+    // --- ADDED: Poll update logic ---
+    if (poll) {
+      try {
+        const pollOptions = JSON.parse(poll);
+        // If there's an existing poll, we update its options.
+        // This simple approach replaces the options array. A more complex
+        // implementation could try to merge based on option text to preserve votes,
+        // but that can be tricky. For now, we'll reset votes on option changes.
+        const newPollData = {
+          options: pollOptions.map((optionText: string) => {
+            // Try to find a matching existing option to preserve votes
+            const existingOption = post.poll?.options.find(
+              (o) => o.text === optionText
+            );
+            return {
+              text: optionText,
+              votes: existingOption ? existingOption.votes : [],
+            };
+          }),
+          // Voters list should be preserved if the poll structure is just being edited
+          voters: post.poll?.voters || [],
+        };
+        post.poll = newPollData;
+      } catch (pollError) {
+        res.status(400).json({ message: "Invalid poll data format" });
+        return;
+      }
+    } else {
+      // If an empty poll is sent, it means it should be removed
+      post.poll = undefined;
+    }
+    // --- END OF POLL LOGIC ---
+
+    const updatedPost = await post.save();
+
+    const populatedPost = await Post.findById(updatedPost._id).populate(
+      "author",
+      "name avatar"
+    );
+
+    // Emit to all clients that a post was updated
+    req.app.get("io").emit("postUpdated", populatedPost);
+
+    res.status(200).json(populatedPost);
+  } catch (error) {
+   
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+
+
+
+
+
+
+
+// Add this new function to your post controller
+export const getPostById = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const post = await Post.findById(req.params.id)
+      .populate("author", "name avatar")
+      .lean(); // .lean() for better performance
+
+    if (!post) {
+      res.status(404).json({ message: "Post not found" });
+      return;
+    }
+
+    // We only send the post data. Comments will be fetched separately by the client.
+    res.status(200).json(post);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
