@@ -70,7 +70,7 @@ export const createPost = async (
       return;
     }
 
-    const { title, content, youtubeLink, tags, poll, links } = req.body; // Added 'links'
+    const { title, content, youtubeLink, tags, poll, links } = req.body; 
     let image = "";
 
     if (req.file) {
@@ -125,8 +125,8 @@ export const createPost = async (
       "name avatar"
     );
 
-    req.app.get("io").emit("newPost", populatedPost);
-    req.app.get("io").to(req.user._id.toString()).emit("userPostCreated", {
+    // req.app.get("io").emit("newPost", populatedPost);
+    req.app.get("io").to(req.user._id.toString()).emit("postCreated", {
       post: populatedPost,
       message: "Your post has been created successfully",
     });
@@ -503,7 +503,12 @@ export const updatePost = async (
     );
 
     // Emit to all clients that a post was updated
-    req.app.get("io").emit("postUpdated", populatedPost);
+    //req.app.get("io").emit("postUpdated", populatedPost);
+
+       req.app.get("io").to(req.user._id.toString()).emit("postUpdated", {
+      post: populatedPost,
+      message: "Your post has been updated successfully!",
+    });
 
     res.status(200).json(populatedPost);
   } catch (error) {

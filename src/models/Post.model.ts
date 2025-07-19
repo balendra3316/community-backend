@@ -27,7 +27,7 @@ const PostSchema: Schema = new Schema(
   {
     author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     title: { type: String, required: true },
-    content: { type: String, required: true },
+    content: { type: String},
     image: { type: String },
     links: [{type:String}],
     youtubeLink: { type: String },
