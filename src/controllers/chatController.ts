@@ -3,20 +3,20 @@ import fs from 'fs';
 import path from 'path';
 import { Request, Response } from 'express';
 
-// Initialize Google Generative AI
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
 
-// Get current directory - simplified CommonJS approach
+
 const currentDir = __dirname;
 
-// Interface for request body
+
 interface ChatRequest extends Request {
   body: {
     message: string;
   };
 }
 
-// Interface for API responses
+
 interface ApiResponse {
   success: boolean;
   response?: string;

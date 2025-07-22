@@ -70,7 +70,7 @@ CLASS SCHEDULE:
 - 5-Day Workshop starts every Monday
 - Morning batch available
 - Evening batch available
-- 30 minutes per session
+- 60 minutes per session
 - Live interactive format
 
 CONTACT & WEBSITES:
@@ -387,7 +387,7 @@ In 2020, my wife Sandhya and I launched Anyone Can Dance to make dance accessibl
 
 ACD Achieved "Most Innovative Online Dance Learning Platform"
 
-Balendra is developer of this website
+Balendra is developer of this website for soul skool
 
 
 
