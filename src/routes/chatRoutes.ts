@@ -17,7 +17,7 @@ router.use(cors(corsOptions));
 
 const chatLimiter: RateLimitRequestHandler = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 20, // limit each IP to 20 requests per windowMs
+  max: 20, 
   message: {
     success: false,
     error: 'Too many requests'

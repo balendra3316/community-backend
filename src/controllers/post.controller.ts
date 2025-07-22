@@ -435,7 +435,7 @@ export const updatePost = async (
     if (req.file) {
       try {
         if (post.image) {
-          // You should have a function to delete the old image from Bunny Storage
+         
           // await deleteImageFromBunnyStorage(post.image);
         }
         image = await BunnyStorageService.uploadImage(
