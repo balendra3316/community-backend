@@ -18,6 +18,7 @@ import leaderboardRoutes from "./routes/leaderboard.routes";
 import courseRoutes from "./routes/course.routes";
 import adminRoutes from "./routes/admin.routes";
 import chatRoutes from "./routes/chatRoutes"
+import attendanceRoutes from "./routes/attendance.route"
 
 dotenv.config();
 
@@ -75,6 +76,7 @@ app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api", chatRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
