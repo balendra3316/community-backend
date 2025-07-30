@@ -10,6 +10,7 @@ import passport from "./config/passport";
 import { notFound, errorHandler } from "./middleware/error.middleware";
 import { setupSocketIO } from "./socket";
 
+
 import authRoutes from "./routes/auth.routes";
 import postRoutes from "./routes/post.routes";
 import commentRoutes from "./routes/comment.routes";
@@ -77,6 +78,10 @@ app.use("/api/courses", courseRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api", chatRoutes);
 app.use('/api/attendance', attendanceRoutes);
+
+
+
+
 
 app.use(notFound);
 app.use(errorHandler);
