@@ -15,19 +15,19 @@ const corsOptions: CorsOptions = {
 router.use(cors(corsOptions));
 
 
-const chatLimiter: RateLimitRequestHandler = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 20, 
-  message: {
-    success: false,
-    error: 'Too many requests'
-  },
-  standardHeaders: true, 
-  legacyHeaders: false, 
-});
+// const chatLimiter: RateLimitRequestHandler = rateLimit({
+//   windowMs: 1 * 60 * 1000, // 1 minute
+//   max: 20, 
+//   message: {
+//     success: false,
+//     error: 'Too many requests'
+//   },
+//   standardHeaders: true, 
+//   legacyHeaders: false, 
+// });
 
-// Apply rate limiting
-router.use(chatLimiter);
+// // Apply rate limiting
+// router.use(chatLimiter);
 
 // Routes
 router.post('/chat', sendMessage);

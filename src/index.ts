@@ -20,6 +20,7 @@ import courseRoutes from "./routes/course.routes";
 import adminRoutes from "./routes/admin.routes";
 import chatRoutes from "./routes/chatRoutes"
 import attendanceRoutes from "./routes/attendance.route"
+import { processAndStoreKnowledge } from "./prepare-knowledge";
 
 dotenv.config();
 
@@ -86,5 +87,31 @@ app.use('/api/attendance', attendanceRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {});
+// const PORT = process.env.PORT || 5000;
+// server.listen(PORT, () => {});
+
+
+const startServer = async () => {
+  try {
+    // First, connect to the database and wait for it to finish
+    await connectDB();
+    console.log("✅ MongoDB Connected...");
+
+    // Second, run the one-time knowledge processing script
+    // It will check if data exists and only run if the collection is empty
+    //await processAndStoreKnowledge();
+
+    // Finally, start the server now that the database is ready
+    const PORT = process.env.PORT || 5000;
+    server.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+
+  } catch (error) {
+    console.error("❌ Failed to start server:", error);
+    process.exit(1);
+  }
+};
+
+// --- 3. CALL THE STARTUP FUNCTION ---
+startServer();
