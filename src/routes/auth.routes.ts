@@ -19,6 +19,6 @@ router.get("/me", protect, getCurrentUser);
 
 router.post("/logout", logout);
 
-router.put("/profile", protect, upload.single("avatar"), updateProfile);
+router.put("/profile", protect,  upload.single("avatar"), updateProfile);
 
 export default router;

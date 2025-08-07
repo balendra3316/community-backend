@@ -524,7 +524,7 @@ export const sendMessage = async (req: ChatRequest, res: Response<ApiResponse>):
         });
 
     } catch (error) {
-        console.error("Error in sendMessage RAG:", error);
+       // console.error("Error in sendMessage RAG:", error);
         const errorStr = error instanceof Error ? error.message : String(error);
         res.status(500).json({
             success: false,

@@ -46,7 +46,7 @@ export const processAndStoreKnowledge = async (): Promise<void> => {
     console.log(`🧩 Split text into ${chunks.length} chunks.`);
 
     // Process each chunk
-    console.log("⏳ Creating embeddings and storing in database... This may take a while.");
+    //console.log("⏳ Creating embeddings and storing in database... This may take a while.");
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
       
@@ -65,10 +65,10 @@ export const processAndStoreKnowledge = async (): Promise<void> => {
       process.stdout.write(`...Processed and saved chunk ${i + 1} of ${chunks.length}\r`);
     }
 
-    console.log("\n✅ Successfully stored all text chunks in the database!");
+   // console.log("\n✅ Successfully stored all text chunks in the database!");
 
   } catch (error) {
-    console.error("❌ An error occurred during knowledge processing:", error);
+    //console.error("❌ An error occurred during knowledge processing:", error);
     // We don't exit the process, to allow the main server to continue running
   }
 };

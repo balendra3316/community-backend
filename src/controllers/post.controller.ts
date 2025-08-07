@@ -13,6 +13,7 @@ import {
   emitUnreadCount,
 } from "../services/notification.service";
 import { BunnyStorageService } from "../services/bunnyStorage.service";
+import { BunnyStreamService } from "../services/bunnyStream.service";
 import { bunnyConfig } from "../config/bunnyStorage.config";
 
 export const deleteImageFromBunnyStorage = async (
@@ -60,82 +61,85 @@ export const updateUserPoints = async (
   } catch (error) {}
 };
 
-export const createPost = async (
-  req: CustomRequest,
-  res: Response
-): Promise<void> => {
-  try {
-    if (!req.user) {
-      res.status(401).json({ message: "Not authenticated" });
-      return;
-    }
 
-    const { title, content, youtubeLink, tags, poll, links } = req.body; 
-    let image = "";
 
-    if (req.file) {
-      try {
-        image = await BunnyStorageService.uploadImage(
-          req.file.buffer,
-          req.file.originalname,
-          "community-posts"
-        );
-      } catch (uploadError) {
-        res.status(500).json({ message: "Image upload failed" });
-        return;
-      }
-    }
 
-    let pollData;
-    if (poll) {
-      try {
-        const pollOptions = JSON.parse(poll);
-        pollData = {
-          options: pollOptions.map((option: string) => ({
-            text: option,
-            votes: [],
-          })),
-          voters: [],
-        };
-      } catch (pollError) {
-        res.status(400).json({ message: "Invalid poll data format" });
-        return;
-      }
-    }
+// export const createPost = async (
+//   req: CustomRequest,
+//   res: Response
+// ): Promise<void> => {
+//   try {
+//     if (!req.user) {
+//       res.status(401).json({ message: "Not authenticated" });
+//       return;
+//     }
 
-    const post = new Post({
-      author: req.user._id,
-      title,
-      content,
-      image,
-      youtubeLink,
-      links: links ? links.split(",").map((link: string) => link.trim()) : [], // Added this line
-      tags: tags ? tags.split(",").map((tag: string) => tag.trim()) : [],
-      poll: pollData,
-    });
+//     const { title, content, youtubeLink, tags, poll, links } = req.body; 
+//     let image = "";
 
-    const savedPost = await post.save();
+//     if (req.file) {
+//       try {
+//         image = await BunnyStorageService.uploadImage(
+//           req.file.buffer,
+//           req.file.originalname,
+//           "community-posts"
+//         );
+//       } catch (uploadError) {
+//         res.status(500).json({ message: "Image upload failed" });
+//         return;
+//       }
+//     }
 
-    setImmediate(() => {
-      updateUserPoints(req.user!._id.toString(), 5);
-    });
+//     let pollData;
+//     if (poll) {
+//       try {
+//         const pollOptions = JSON.parse(poll);
+//         pollData = {
+//           options: pollOptions.map((option: string) => ({
+//             text: option,
+//             votes: [],
+//           })),
+//           voters: [],
+//         };
+//       } catch (pollError) {
+//         res.status(400).json({ message: "Invalid poll data format" });
+//         return;
+//       }
+//     }
 
-    const populatedPost = await Post.findById(savedPost._id).populate(
-      "author",
-      "name avatar"
-    );
+//     const post = new Post({
+//       author: req.user._id,
+//       title,
+//       content,
+//       image,
+//       youtubeLink,
+//       links: links ? links.split(",").map((link: string) => link.trim()) : [], // Added this line
+//       tags: tags ? tags.split(",").map((tag: string) => tag.trim()) : [],
+//       poll: pollData,
+//     });
 
-    // req.app.get("io").emit("newPost", populatedPost);
-    req.app.get("io").to(req.user._id.toString()).emit("postCreated", {
-      post: populatedPost,
-      message: "Your post has been created successfully",
-    });
+//     const savedPost = await post.save();
 
-    res.status(201).json(populatedPost);
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
-};
+//     setImmediate(() => {
+//       updateUserPoints(req.user!._id.toString(), 5);
+//     });
+
+//     const populatedPost = await Post.findById(savedPost._id).populate(
+//       "author",
+//       "name avatar"
+//     );
+
+//     // req.app.get("io").emit("newPost", populatedPost);
+//     req.app.get("io").to(req.user._id.toString()).emit("postCreated", {
+//       post: populatedPost,
+//       message: "Your post has been created successfully",
+//     });
+
+//     res.status(201).json(populatedPost);
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
 
 export const getPosts = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -315,62 +319,62 @@ export const votePoll = async (
   }
 };
 
-export const deletePost = async (
-  req: CustomRequest,
-  res: Response
-): Promise<void> => {
-  try {
-    if (!req.user) {
-      res.status(401).json({ message: "Not authenticated" });
-      return;
-    }
+// export const deletePost = async (
+//   req: CustomRequest,
+//   res: Response
+// ): Promise<void> => {
+//   try {
+//     if (!req.user) {
+//       res.status(401).json({ message: "Not authenticated" });
+//       return;
+//     }
 
-    const post: any = await Post.findById(req.params.id);
-    if (!post) {
-      res.status(404).json({ message: "Post not found" });
-      return;
-    }
+//     const post: any = await Post.findById(req.params.id);
+//     if (!post) {
+//       res.status(404).json({ message: "Post not found" });
+//       return;
+//     }
 
-    if (
-      post.author.toString() !== req.user._id.toString() &&
-      !req.user.isAdmin
-    ) {
-      res.status(403).json({ message: "Not authorized" });
-      return;
-    }
+//     if (
+//       post.author.toString() !== req.user._id.toString() &&
+//       !req.user.isAdmin
+//     ) {
+//       res.status(403).json({ message: "Not authorized" });
+//       return;
+//     }
 
-    const imageUrl = post.image;
-    const authorId = post.author.toString();
-    const postId = post._id.toString();
+//     const imageUrl = post.image;
+//     const authorId = post.author.toString();
+//     const postId = post._id.toString();
 
-    await Post.findByIdAndDelete(post._id);
+//     await Post.findByIdAndDelete(post._id);
 
-    req.app.get("io").to(authorId).emit("postDeleted", {
-      postId: postId,
-      message: "Your post has been deleted successfully",
-    });
+//     req.app.get("io").to(authorId).emit("postDeleted", {
+//       postId: postId,
+//       message: "Your post has been deleted successfully",
+//     });
 
-    res.json({ message: "Post deleted successfully" });
+//     res.json({ message: "Post deleted successfully" });
 
-    setImmediate(async () => {
-      try {
-        await updateUserPoints(authorId, -5);
+//     setImmediate(async () => {
+//       try {
+//         await updateUserPoints(authorId, -5);
 
-        await Comment.deleteMany({ post: postId });
+//         await Comment.deleteMany({ post: postId });
 
-        const deletedNotifications = await Notification.deleteMany({
-          post: postId,
-        });
+//         const deletedNotifications = await Notification.deleteMany({
+//           post: postId,
+//         });
 
-        if (imageUrl) {
-          await deleteImageFromBunnyStorage(imageUrl);
-        }
-      } catch (cleanupError) {}
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
-};
+//         if (imageUrl) {
+//           await deleteImageFromBunnyStorage(imageUrl);
+//         }
+//       } catch (cleanupError) {}
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
 
 export const getMyPosts = async (
   req: CustomRequest,
@@ -405,117 +409,119 @@ export const getMyPosts = async (
   }
 };
 
-export const updatePost = async (
-  req: CustomRequest,
-  res: Response
-): Promise<void> => {
-  try {
-    if (!req.user) {
-      res.status(401).json({ message: "Not authenticated" });
-      return;
-    }
 
-    const { title, content, youtubeLink, tags, links, poll } = req.body;
-    const post = await Post.findById(req.params.id);
 
-    if (!post) {
-      res.status(404).json({ message: "Post not found" });
-      return;
-    }
+// export const updatePost = async (
+//   req: CustomRequest,
+//   res: Response
+// ): Promise<void> => {
+//   try {
+//     if (!req.user) {
+//       res.status(401).json({ message: "Not authenticated" });
+//       return;
+//     }
 
-    if (
-      post.author.toString() !== req.user._id.toString() &&
-      !req.user.isAdmin
-    ) {
-      res.status(403).json({ message: "Not authorized" });
-      return;
-    }
+//     const { title, content, youtubeLink, tags, links, poll } = req.body;
+//     const post = await Post.findById(req.params.id);
 
-    let image = post.image;
-    if (req.file) {
-      try {
-        if (post.image) {
+//     if (!post) {
+//       res.status(404).json({ message: "Post not found" });
+//       return;
+//     }
+
+//     if (
+//       post.author.toString() !== req.user._id.toString() &&
+//       !req.user.isAdmin
+//     ) {
+//       res.status(403).json({ message: "Not authorized" });
+//       return;
+//     }
+
+//     let image = post.image;
+//     if (req.file) {
+//       try {
+//         if (post.image) {
          
-          // await deleteImageFromBunnyStorage(post.image);
-        }
-        image = await BunnyStorageService.uploadImage(
-          req.file.buffer,
-          req.file.originalname,
-          "community-posts"
-        );
-      } catch (uploadError) {
-        res.status(500).json({ message: "Image upload failed" });
-        return;
-      }
-    }
+//           // await deleteImageFromBunnyStorage(post.image);
+//         }
+//         image = await BunnyStorageService.uploadImage(
+//           req.file.buffer,
+//           req.file.originalname,
+//           "community-posts"
+//         );
+//       } catch (uploadError) {
+//         res.status(500).json({ message: "Image upload failed" });
+//         return;
+//       }
+//     }
 
-    // Update standard fields
-    post.title = title || post.title;
-    post.content = content || post.content;
-    post.youtubeLink =
-      youtubeLink !== undefined ? youtubeLink : post.youtubeLink;
-    post.image = image;
-    post.links = links
-      ? links.split(",").map((link: string) => link.trim())
-      : post.links;
-    post.tags = tags
-      ? tags.split(",").map((tag: string) => tag.trim())
-      : post.tags;
+//     // Update standard fields
+//     post.title = title || post.title;
+//     post.content = content || post.content;
+//     post.youtubeLink =
+//       youtubeLink !== undefined ? youtubeLink : post.youtubeLink;
+//     post.image = image;
+//     post.links = links
+//       ? links.split(",").map((link: string) => link.trim())
+//       : post.links;
+//     post.tags = tags
+//       ? tags.split(",").map((tag: string) => tag.trim())
+//       : post.tags;
 
-    // --- ADDED: Poll update logic ---
-    if (poll) {
-      try {
-        const pollOptions = JSON.parse(poll);
-        // If there's an existing poll, we update its options.
-        // This simple approach replaces the options array. A more complex
-        // implementation could try to merge based on option text to preserve votes,
-        // but that can be tricky. For now, we'll reset votes on option changes.
-        const newPollData = {
-          options: pollOptions.map((optionText: string) => {
-            // Try to find a matching existing option to preserve votes
-            const existingOption = post.poll?.options.find(
-              (o) => o.text === optionText
-            );
-            return {
-              text: optionText,
-              votes: existingOption ? existingOption.votes : [],
-            };
-          }),
-          // Voters list should be preserved if the poll structure is just being edited
-          voters: post.poll?.voters || [],
-        };
-        post.poll = newPollData;
-      } catch (pollError) {
-        res.status(400).json({ message: "Invalid poll data format" });
-        return;
-      }
-    } else {
-      // If an empty poll is sent, it means it should be removed
-      post.poll = undefined;
-    }
-    // --- END OF POLL LOGIC ---
+//     // --- ADDED: Poll update logic ---
+//     if (poll) {
+//       try {
+//         const pollOptions = JSON.parse(poll);
+//         // If there's an existing poll, we update its options.
+//         // This simple approach replaces the options array. A more complex
+//         // implementation could try to merge based on option text to preserve votes,
+//         // but that can be tricky. For now, we'll reset votes on option changes.
+//         const newPollData = {
+//           options: pollOptions.map((optionText: string) => {
+//             // Try to find a matching existing option to preserve votes
+//             const existingOption = post.poll?.options.find(
+//               (o) => o.text === optionText
+//             );
+//             return {
+//               text: optionText,
+//               votes: existingOption ? existingOption.votes : [],
+//             };
+//           }),
+//           // Voters list should be preserved if the poll structure is just being edited
+//           voters: post.poll?.voters || [],
+//         };
+//         post.poll = newPollData;
+//       } catch (pollError) {
+//         res.status(400).json({ message: "Invalid poll data format" });
+//         return;
+//       }
+//     } else {
+//       // If an empty poll is sent, it means it should be removed
+//       post.poll = undefined;
+//     }
+//     // --- END OF POLL LOGIC ---
 
-    const updatedPost = await post.save();
+//     const updatedPost = await post.save();
 
-    const populatedPost = await Post.findById(updatedPost._id).populate(
-      "author",
-      "name avatar"
-    );
+//     const populatedPost = await Post.findById(updatedPost._id).populate(
+//       "author",
+//       "name avatar"
+//     );
 
-    // Emit to all clients that a post was updated
-    //req.app.get("io").emit("postUpdated", populatedPost);
+//     // Emit to all clients that a post was updated
+//     //req.app.get("io").emit("postUpdated", populatedPost);
 
-       req.app.get("io").to(req.user._id.toString()).emit("postUpdated", {
-      post: populatedPost,
-      message: "Your post has been updated successfully!",
-    });
+//        req.app.get("io").to(req.user._id.toString()).emit("postUpdated", {
+//       post: populatedPost,
+//       message: "Your post has been updated successfully!",
+//     });
 
-    res.status(200).json(populatedPost);
-  } catch (error) {
+//     res.status(200).json(populatedPost);
+//   } catch (error) {
    
-    res.status(500).json({ message: "Server error" });
-  }
-};
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
 
 
 
@@ -545,4 +551,256 @@ export const getPostById = async (
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export const createPost = async (req: CustomRequest, res: Response): Promise<void> => {
+    try {
+        if (!req.user) {
+            res.status(401).json({ message: "Not authenticated" });
+            return;
+        }
+
+        const { title, content, youtubeLink, tags, poll, links } = req.body;
+        let image = "";
+        let videoUrl, videoThumbnailUrl, videoGuid;
+
+        // The 'upload' middleware now uses .fields(), so req.files is an object
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+        if (files && files.image) {
+            try {
+                image = await BunnyStorageService.uploadImage(files.image[0].buffer, files.image[0].originalname, "community-posts");
+            } catch (uploadError) {
+                res.status(500).json({ message: "Image upload failed" });
+                return;
+            }
+        } else if (files && files.video) {
+            try {
+                const videoData = await BunnyStreamService.uploadVideo(files.video[0].buffer, files.video[0].originalname);
+                videoUrl = videoData.videoUrl;
+                videoThumbnailUrl = videoData.thumbnailUrl;
+                videoGuid = videoData.guid;
+            } catch (uploadError) {
+                res.status(500).json({ message: "Video upload failed" });
+                return;
+            }
+        }
+
+        let pollData;
+        if (poll) {
+            try {
+                const pollOptions = JSON.parse(poll);
+                pollData = {
+                    options: pollOptions.map((option: string) => ({ text: option, votes: [] })),
+                    voters: [],
+                };
+            } catch (pollError) {
+                res.status(400).json({ message: "Invalid poll data format" });
+                return;
+            }
+        }
+
+        const post = new Post({
+            author: req.user._id,
+            title,
+            content,
+            image,
+            videoUrl,
+            videoThumbnailUrl,
+            videoGuid,
+            youtubeLink,
+            links: links ? links.split(",").map((link: string) => link.trim()) : [],
+            tags: tags ? tags.split(",").map((tag: string) => tag.trim()) : [],
+            poll: pollData,
+        });
+
+        const savedPost = await post.save();
+
+        setImmediate(() => {
+            updateUserPoints(req.user!._id.toString(), 5);
+        });
+
+        const populatedPost = await Post.findById(savedPost._id).populate("author", "name avatar");
+        req.app.get("io").to(req.user._id.toString()).emit("postCreated", {
+            post: populatedPost,
+            message: "Your post has been created successfully",
+        });
+
+        res.status(201).json(populatedPost);
+    } catch (error) {
+        //console.error("Create Post Error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+export const updatePost = async (req: CustomRequest, res: Response): Promise<void> => {
+    try {
+        if (!req.user) {
+            res.status(401).json({ message: "Not authenticated" });
+            return;
+        }
+
+        const { title, content, youtubeLink, tags, links, poll, removeVideo, removeImage } = req.body;
+        const post = await Post.findById(req.params.id);
+
+        if (!post) {
+            res.status(404).json({ message: "Post not found" });
+            return;
+        }
+        if (post.author.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+            res.status(403).json({ message: "Not authorized" });
+            return;
+        }
+
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+        // Handle new file uploads
+        if (files && files.image) {
+            if (post.image) await deleteImageFromBunnyStorage(post.image);
+            if (post.videoGuid) await BunnyStreamService.deleteVideo(post.videoGuid);
+            post.image = await BunnyStorageService.uploadImage(files.image[0].buffer, files.image[0].originalname, "community-posts");
+            post.videoUrl = undefined;
+            post.videoThumbnailUrl = undefined;
+            post.videoGuid = undefined;
+        } else if (files && files.video) {
+            if (post.image) await deleteImageFromBunnyStorage(post.image);
+            if (post.videoGuid) await BunnyStreamService.deleteVideo(post.videoGuid);
+            const videoData = await BunnyStreamService.uploadVideo(files.video[0].buffer, files.video[0].originalname);
+            post.videoUrl = videoData.videoUrl;
+            post.videoThumbnailUrl = videoData.thumbnailUrl;
+            post.videoGuid = videoData.guid;
+            post.image = undefined;
+        }
+
+        // Handle explicit removal flags from frontend
+        if (removeImage === 'true' && post.image) {
+            await deleteImageFromBunnyStorage(post.image);
+            post.image = undefined;
+        }
+        if (removeVideo === 'true' && post.videoGuid) {
+            await BunnyStreamService.deleteVideo(post.videoGuid);
+            post.videoUrl = undefined;
+            post.videoThumbnailUrl = undefined;
+            post.videoGuid = undefined;
+        }
+
+        // Update standard fields
+        post.title = title || post.title;
+        post.content = content || post.content;
+        post.youtubeLink = youtubeLink !== undefined ? youtubeLink : post.youtubeLink;
+        post.links = links ? links.split(",").map((link: string) => link.trim()) : post.links;
+        post.tags = tags ? tags.split(",").map((tag: string) => tag.trim()) : post.tags;
+
+        // Poll update logic (your existing code)
+       if (poll) {
+      try {
+        const pollOptions = JSON.parse(poll);
+        // If there's an existing poll, we update its options.
+        // This simple approach replaces the options array. A more complex
+        // implementation could try to merge based on option text to preserve votes,
+        // but that can be tricky. For now, we'll reset votes on option changes.
+        const newPollData = {
+          options: pollOptions.map((optionText: string) => {
+            // Try to find a matching existing option to preserve votes
+            const existingOption = post.poll?.options.find(
+              (o) => o.text === optionText
+            );
+            return {
+              text: optionText,
+              votes: existingOption ? existingOption.votes : [],
+            };
+          }),
+          // Voters list should be preserved if the poll structure is just being edited
+          voters: post.poll?.voters || [],
+        };
+        post.poll = newPollData;
+      } catch (pollError) {
+        res.status(400).json({ message: "Invalid poll data format" });
+        return;
+      }
+    } else {
+      // If an empty poll is sent, it means it should be removed
+      post.poll = undefined;
+    }
+
+        const updatedPost = await post.save();
+        const populatedPost = await Post.findById(updatedPost._id).populate("author", "name avatar");
+
+        req.app.get("io").to(req.user._id.toString()).emit("postUpdated", {
+            post: populatedPost,
+            message: "Your post has been updated successfully!",
+        });
+
+        res.status(200).json(populatedPost);
+    } catch (error) {
+      //  console.error("Update Post Error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+
+export const deletePost = async (req: CustomRequest, res: Response): Promise<void> => {
+    try {
+        if (!req.user) {
+            res.status(401).json({ message: "Not authenticated" });
+            return;
+        }
+
+        const post: any = await Post.findById(req.params.id);
+        if (!post) {
+            res.status(404).json({ message: "Post not found" });
+            return;
+        }
+        if (post.author.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+            res.status(403).json({ message: "Not authorized" });
+            return;
+        }
+
+        const imageUrl = post.image;
+        const videoGuid = post.videoGuid; // Get video GUID for deletion
+        const authorId = post.author.toString();
+        const postId = post._id.toString();
+
+        await Post.findByIdAndDelete(post._id);
+
+        req.app.get("io").to(authorId).emit("postDeleted", {
+            postId: postId,
+            message: "Your post has been deleted successfully",
+        });
+
+        res.json({ message: "Post deleted successfully" });
+
+        setImmediate(async () => {
+            try {
+                await updateUserPoints(authorId, -5);
+                await Comment.deleteMany({ post: postId });
+                await Notification.deleteMany({ post: postId });
+
+                if (imageUrl) {
+                    await deleteImageFromBunnyStorage(imageUrl);
+                }
+                if (videoGuid) { // If there was a video, delete it from Bunny Stream
+                    await BunnyStreamService.deleteVideo(videoGuid);
+                }
+            } catch (cleanupError) {
+               //console.error("Post deletion cleanup error:", cleanupError);
+            }
+        });
+    } catch (error) {
+        //console.error("Delete Post Error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
 };
