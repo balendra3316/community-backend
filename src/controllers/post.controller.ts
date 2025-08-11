@@ -48,7 +48,7 @@ export const updateUserPoints = async (
 
       await PointsHistory.create({
         userId,
-        points: delta, // Store the original negative value for reporting purposes
+        points: delta, // Store the original negative 
       });
     } else {
       await User.findByIdAndUpdate(userId, { $inc: { points: delta } });
@@ -565,7 +565,6 @@ export const getPostById = async (
 
 
 
-
 export const createPost = async (req: CustomRequest, res: Response): Promise<void> => {
     try {
         if (!req.user) {
@@ -576,13 +575,14 @@ export const createPost = async (req: CustomRequest, res: Response): Promise<voi
         const { title, content, youtubeLink, tags, poll, links } = req.body;
         let image = "";
         let videoUrl, videoThumbnailUrl, videoGuid;
+        let pointsToAward = 0; // Initialize points
 
-        // The 'upload' middleware now uses .fields(), so req.files is an object
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
         if (files && files.image) {
             try {
                 image = await BunnyStorageService.uploadImage(files.image[0].buffer, files.image[0].originalname, "community-posts");
+                pointsToAward += 50; // Add points for image
             } catch (uploadError) {
                 res.status(500).json({ message: "Image upload failed" });
                 return;
@@ -593,11 +593,23 @@ export const createPost = async (req: CustomRequest, res: Response): Promise<voi
                 videoUrl = videoData.videoUrl;
                 videoThumbnailUrl = videoData.thumbnailUrl;
                 videoGuid = videoData.guid;
+                pointsToAward += 100; // Add points for video
             } catch (uploadError) {
                 res.status(500).json({ message: "Video upload failed" });
                 return;
             }
         }
+
+        // Add points for YouTube link if no video was uploaded
+        if (youtubeLink && !videoUrl) {
+            pointsToAward += 100;
+        }
+
+        // Add points for links
+        if (links && links.split(",").length > 0) {
+            pointsToAward += 30;
+        }
+
 
         let pollData;
         if (poll) {
@@ -629,9 +641,12 @@ export const createPost = async (req: CustomRequest, res: Response): Promise<voi
 
         const savedPost = await post.save();
 
-        setImmediate(() => {
-            updateUserPoints(req.user!._id.toString(), 5);
-        });
+        // Use the calculated points
+        if (pointsToAward > 0) {
+            setImmediate(() => {
+                updateUserPoints(req.user!._id.toString(), pointsToAward);
+            });
+        }
 
         const populatedPost = await Post.findById(savedPost._id).populate("author", "name avatar");
         req.app.get("io").to(req.user._id.toString()).emit("postCreated", {
@@ -641,10 +656,10 @@ export const createPost = async (req: CustomRequest, res: Response): Promise<voi
 
         res.status(201).json(populatedPost);
     } catch (error) {
-        //console.error("Create Post Error:", error);
         res.status(500).json({ message: "Server error" });
     }
 };
+
 
 export const updatePost = async (req: CustomRequest, res: Response): Promise<void> => {
     try {
@@ -751,7 +766,6 @@ export const updatePost = async (req: CustomRequest, res: Response): Promise<voi
     }
 };
 
-
 export const deletePost = async (req: CustomRequest, res: Response): Promise<void> => {
     try {
         if (!req.user) {
@@ -770,9 +784,21 @@ export const deletePost = async (req: CustomRequest, res: Response): Promise<voi
         }
 
         const imageUrl = post.image;
-        const videoGuid = post.videoGuid; // Get video GUID for deletion
+        const videoGuid = post.videoGuid;
         const authorId = post.author.toString();
         const postId = post._id.toString();
+
+        // Calculate points to deduct before deleting the post
+        let pointsToDeduct = 0;
+        if (post.image) {
+            pointsToDeduct += 50;
+        }
+        if (post.videoUrl || post.youtubeLink) {
+            pointsToDeduct += 100;
+        }
+        if (post.links && post.links.length > 0) {
+            pointsToDeduct += 30;
+        }
 
         await Post.findByIdAndDelete(post._id);
 
@@ -785,18 +811,22 @@ export const deletePost = async (req: CustomRequest, res: Response): Promise<voi
 
         setImmediate(async () => {
             try {
-                await updateUserPoints(authorId, -5);
+                // Use the calculated points for deduction
+                if (pointsToDeduct > 0) {
+                    await updateUserPoints(authorId, -pointsToDeduct);
+                }
+
                 await Comment.deleteMany({ post: postId });
                 await Notification.deleteMany({ post: postId });
 
                 if (imageUrl) {
                     await deleteImageFromBunnyStorage(imageUrl);
                 }
-                if (videoGuid) { // If there was a video, delete it from Bunny Stream
+                if (videoGuid) {
                     await BunnyStreamService.deleteVideo(videoGuid);
                 }
             } catch (cleanupError) {
-               //console.error("Post deletion cleanup error:", cleanupError);
+                //console.error("Post deletion cleanup error:", cleanupError);
             }
         });
     } catch (error) {
