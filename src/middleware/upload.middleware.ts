@@ -132,7 +132,7 @@ const postMediaFileFilter = (req: any, file: Express.Multer.File, cb: multer.Fil
 export const uploadPostMedia = multer({
     storage: storage,
     fileFilter: postMediaFileFilter,
-    limits: { fileSize: 200 * 1024 * 1024 } // 200MB limit for videos
+    limits: { fileSize: 300 * 1024 * 1024 } // 300MB limit for videos
 }).fields([
     { name: 'image', maxCount: 1 },
     { name: 'video', maxCount: 1 }
