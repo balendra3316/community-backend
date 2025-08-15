@@ -1,121 +1,9 @@
 
-
-
-// import { Request, Response } from 'express';
-// import User from '../models/attendanceuser.model';
-
-// // A helper function to sanitize the WhatsApp number
-// const sanitizePhoneNumber = (phone: string): string => {
-//   // Removes all non-digit characters from the string
-//   return phone.replace(/\D/g, '');
-// };
-
-
-// export const registerUser = async (req: Request, res: Response): Promise<void> => {
-//   const { name, email, whatsappNumber } = req.body;
-
-//   // --- Backend Validation ---
-//   if (!name || !email || !whatsappNumber) {
-//     res.status(400).json({ message: 'Name, email, and WhatsApp number are required.' });
-//     return;
-//   }
-//   if (name.length > 50) {
-//     res.status(400).json({ message: 'Name cannot exceed 50 characters.' });
-//     return;
-//   }
-//   if (name.trim().split(/\s+/).length > 20) {
-//       res.status(400).json({ message: 'Name cannot exceed 20 words.' });
-//       return;
-//   }
-
-//   const sanitizedNumber = sanitizePhoneNumber(whatsappNumber);
-//   if (sanitizedNumber.length > 15 || sanitizedNumber.length < 7) { // Validating number length
-//       res.status(400).json({ message: 'Please provide a valid number with 7 to 15 digits.' });
-//       return;
-//   }
-
-//   try {
-//     const userEmail = email.toLowerCase();
-    
-//     // Check if user already exists
-//     const existingUser = await User.findOne({ $or: [{ email: userEmail }, { whatsappNumber: sanitizedNumber }] });
-//     if (existingUser) {
-//       res.status(409).json({ message: 'A user with this email or WhatsApp number already exists.' });
-//       return;
-//     }
-
-//     // Create and save the new user
-//     const newUser = new User({
-//       name,
-//       email: userEmail,
-//       whatsappNumber: sanitizedNumber,
-//     });
-//     await newUser.save();
-
-//     res.status(201).json({ message: 'Registered successfully!', user: newUser });
-
-//   } catch (error: any) {
-    
-//     if (error.code === 11000) {
-//         res.status(409).json({ message: 'A user with this email or WhatsApp number already exists.' });
-//         return;
-//     }
-//     res.status(500).json({ message: 'An internal server error occurred.', error: error.message });
-//   }
-// };
-
-
-// // --- 2. Mark Attendance for an Existing User ---
-// export const markAttendance = async (req: Request, res: Response): Promise<void> => {
-//   const { whatsappNumber } = req.body;
-
-//   if (!whatsappNumber) {
-//     res.status(400).json({ message: 'WhatsApp number is required.' });
-//     return;
-//   }
-  
-//   const sanitizedNumber = sanitizePhoneNumber(whatsappNumber);
-//   if (sanitizedNumber.length > 15 || sanitizedNumber.length < 7) { // Validating number length
-//     res.status(400).json({ message: 'Please provide a valid number with 7 to 15 digits.' });
-//     return;
-//   }
-
-//   try {
-//     const today = new Date();
-//     today.setHours(0, 0, 0, 0); 
-
-//     const user = await User.findOne({ whatsappNumber: sanitizedNumber });
-
-//     if (!user) {
-//       res.status(404).json({ message: 'User not found. Please register first.' });
-//       return;
-//     }
-
-//     const alreadyMarked = user.attendance.some(
-//       (record) => new Date(record.date).toDateString() === today.toDateString()
-//     );
-
-//     if (alreadyMarked) {
-//       res.status(200).json({ message: `Attendance already marked for today for ${user.name}.` });
-//       return;
-//     }
-
-//     user.attendance.push({ date: new Date(), status: 'present' });
-//     await user.save();
-
-//     res.status(200).json({ message: `Attendance marked successfully for ${user.name}!` });
-
-//   } catch (error: any) {
-    
-//     res.status(500).json({ message: 'An internal server error occurred.', error: error.message });
-//   }
-// };
-
-
-
-
 import { Request, Response } from 'express';
 import User from '../models/attendanceuser.model';
+
+import { CustomRequest } from '../types/express/express';
+import StarClubAttendance from '../models/StarClubAttendance.model';
 
 /**
  * Sanitizes a phone number by removing non-digit characters
@@ -289,5 +177,93 @@ export const exportAllAttendance = async (req: Request, res: Response): Promise<
     } catch (error: any) {
         
         res.status(500).json({ message: 'An internal server error occurred.', error: error.message });
+    }
+};
+
+
+
+
+
+
+
+// this is for community direct button of attendace
+
+// controllers/attendance.controller.ts
+
+
+
+// @desc    Mark attendance for the current day
+// @route   POST /api/attendance/mark
+// @access  Private
+export const SCmarkAttendance = async (req: CustomRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ message: 'Not authenticated' });
+      return;
+    }
+
+    const userId = req.user._id;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to the start of the day
+
+    let userAttendance = await StarClubAttendance.findOne({ userId });
+
+    if (!userAttendance) {
+      // If user has no record, create one
+      userAttendance = new StarClubAttendance({
+        userId,
+        attendance: [{ date: today, status: 'present' }],
+      });
+    } else {
+      // Check if attendance for today already exists
+      const hasAttendedToday = userAttendance.attendance.some(
+        (record) => record.date.getTime() === today.getTime()
+      );
+
+      if (hasAttendedToday) {
+        res.status(400).json({ message: 'Attendance already marked for today' });
+        return;
+      }
+      // Add new attendance record
+      userAttendance.attendance.push({ date: today, status: 'present' });
+    }
+
+    await userAttendance.save();
+    res.status(201).json({ message: 'Attendance marked successfully' });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc    Check if attendance has been marked for today
+// @route   GET /api/attendance/check
+// @access  Private
+export const checkTodayAttendance = async (req: CustomRequest, res: Response): Promise<void> => {
+    try {
+        if (!req.user) {
+            res.status(401).json({ message: 'Not authenticated' });
+            return;
+        }
+
+        const userId = req.user._id;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Normalize to the start of the day
+
+        const userAttendance = await StarClubAttendance.findOne({ userId });
+
+        if (!userAttendance) {
+            res.json({ hasAttended: false });
+            return;
+        }
+
+        const hasAttendedToday = userAttendance.attendance.some(
+            (record) => record.date.getTime() === today.getTime()
+        );
+
+        res.json({ hasAttended: hasAttendedToday });
+
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
     }
 };
