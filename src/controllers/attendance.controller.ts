@@ -135,50 +135,181 @@ export const markAttendance = async (req: Request, res: Response): Promise<void>
 
 
 
-export const getAttendanceData = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 15;
-    const skip = (page - 1) * limit;
+// export const getAttendanceData = async (req: Request, res: Response): Promise<void> => {
+//   try {
+//     const page = parseInt(req.query.page as string) || 1;
+//     const limit = parseInt(req.query.limit as string) || 15;
+//     const skip = (page - 1) * limit;
 
-    const [users, totalUsers] = await Promise.all([
-      User.find()
-        .select('name email whatsappNumber attendance')
-        .sort({ joinDate: -1 })
-        .limit(limit)
-        .skip(skip)
-        .lean(),
-      User.countDocuments()
-    ]);
+//     const [users, totalUsers] = await Promise.all([
+//       User.find()
+//         .select('name email whatsappNumber attendance')
+//         .sort({ joinDate: -1 })
+//         .limit(limit)
+//         .skip(skip)
+//         .lean(),
+//       User.countDocuments()
+//     ]);
 
-    const totalPages = Math.ceil(totalUsers / limit);
+//     const totalPages = Math.ceil(totalUsers / limit);
 
-    res.status(200).json({ users, totalPages, currentPage: page });
+//     res.status(200).json({ users, totalPages, currentPage: page });
 
-  } catch (error: any) {
+//   } catch (error: any) {
     
-    res.status(500).json({ message: 'An internal server error occurred.', error: error.message });
-  }
+//     res.status(500).json({ message: 'An internal server error occurred.', error: error.message });
+//   }
+// };
+
+
+
+
+// export const exportAllAttendance = async (req: Request, res: Response): Promise<void> => {
+//     try {
+//         // Fetch ALL users without pagination, selecting all necessary fields
+//         const users = await User.find()
+//             .select('name email whatsappNumber attendance joinDate')
+//             .sort({ joinDate: -1 })
+//             .lean();
+
+//         res.status(200).json({ users });
+
+//     } catch (error: any) {
+        
+//         res.status(500).json({ message: 'An internal server error occurred.', error: error.message });
+//     }
+// };
+
+
+
+
+
+
+
+
+// --- 3. Get Paginated Attendance Data ---
+// NOTE: This function is updated to use the StarClubAttendance collection
+export const getAttendanceData = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 15;
+        const skip = (page - 1) * limit;
+
+        // Use Promise.all to fetch data and total count concurrently
+        const [results, totalRecords] = await Promise.all([
+            // Aggregation pipeline to join StarClubAttendance with User
+            StarClubAttendance.aggregate([
+                // 1. Sort by the most recent attendance record creation date
+                { $sort: { createdAt: -1 } },
+                
+                // 2. Apply pagination
+                { $skip: skip },
+                { $limit: limit },
+
+                // 3. Join with the 'users' collection
+                {
+                    $lookup: {
+                        from: 'users', // The collection name for the main User model
+                        localField: 'userId',
+                        foreignField: '_id',
+                        as: 'userDetails'
+                    }
+                },
+
+                // 4. Deconstruct the userDetails array (it will have 0 or 1 element)
+                {
+                    $unwind: {
+                        path: '$userDetails',
+                        preserveNullAndEmptyArrays: true // Keep records even if user is deleted
+                    }
+                },
+
+                // 5. Project the final structure to match the old API response
+                {
+                    $project: {
+                        _id: '$userDetails._id', // Keep the user's original ID
+                        name: '$userDetails.name',
+                        email: '$userDetails.email',
+                        whatsappNumber: '$userDetails.whatsappNumber',
+                        attendance: '$attendance',
+                    }
+                }
+            ]),
+            StarClubAttendance.countDocuments()
+        ]);
+
+        const totalPages = Math.ceil(totalRecords / limit);
+        
+        // The key 'users' is used to maintain frontend compatibility
+        res.status(200).json({ users: results, totalPages, currentPage: page });
+
+    } catch (error: any) {
+        res.status(500).json({ message: 'An internal server error occurred.', error: error.message });
+    }
 };
 
-
-
-
+// --- 4. Export All Attendance Data ---
+// NOTE: This function is updated to use the StarClubAttendance collection
 export const exportAllAttendance = async (req: Request, res: Response): Promise<void> => {
     try {
-        // Fetch ALL users without pagination, selecting all necessary fields
-        const users = await User.find()
-            .select('name email whatsappNumber attendance joinDate')
-            .sort({ joinDate: -1 })
-            .lean();
+        // Aggregation pipeline to get all users and their attendance
+        const users = await StarClubAttendance.aggregate([
+            // 1. Join with the 'users' collection
+            {
+                $lookup: {
+                    from: 'users', // The collection name for the main User model
+                    localField: 'userId',
+                    foreignField: '_id',
+                    as: 'userDetails'
+                }
+            },
+
+            // 2. Deconstruct the userDetails array
+            {
+                $unwind: {
+                    path: '$userDetails',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+
+            // 3. Project the final structure to match the old API response
+            {
+                $project: {
+                    _id: '$userDetails._id',
+                    name: '$userDetails.name',
+                    email: '$userDetails.email',
+                    whatsappNumber: '$userDetails.whatsappNumber',
+                    // Use the user's creation date as the joinDate
+                    joinDate: '$userDetails.createdAt', 
+                    attendance: '$attendance',
+                }
+            },
+
+            // 4. Sort by joinDate descending to match the old function's behavior
+            { $sort: { joinDate: -1 } }
+        ]);
 
         res.status(200).json({ users });
 
     } catch (error: any) {
-        
         res.status(500).json({ message: 'An internal server error occurred.', error: error.message });
     }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
