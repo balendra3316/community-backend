@@ -19,9 +19,20 @@ export const getAllCourses = async (
   try {
     const userId = req.user?._id;
 
+
+Course.updateMany(
+   { isPublished: { $exists: false } },
+   { $set: { isPublished: true } }
+)
+
+
+
     if (!userId) {
 
-      const courses = await Course.find({ isPaid: false }).sort({ order: 1 });
+      const courses = await Course.find({ 
+        isPaid: false, 
+        isPublished: true 
+      }).sort({ order: 1 });
       const coursesWithPayment = courses.map(course => ({
         ...course.toObject(),
         isAccessible: true,
@@ -37,6 +48,9 @@ export const getAllCourses = async (
     const purchasedCourseIds = user?.myPurchasedCourses || [];
 
     const coursesWithProgress = await Course.aggregate([
+      { 
+        $match: { isPublished: true } 
+      },
       { $sort: { order: 1 } },
       {
         $lookup: {

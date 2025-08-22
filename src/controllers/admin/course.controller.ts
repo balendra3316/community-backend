@@ -6,8 +6,8 @@ import Section from '../../models/Section.model';
 import Lesson from '../../models/Lesson.model';
 import Progress from '../../models/Progress.model';
 import mongoose from 'mongoose';
-import { BunnyStorageService } from '../../services/bunnyStorage.service'; // Adjust path as needed
-import { deleteImageFromBunnyStorage } from '../post.controller'; // Adjust path as needed
+import { BunnyStorageService } from '../../services/bunnyStorage.service'; 
+import { deleteImageFromBunnyStorage } from '../post.controller'; 
 
 
 export const createCourse = async (
@@ -16,9 +16,10 @@ export const createCourse = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { title, description, order, isPaid = false, price = 0 } = req.body;
+    const { title, description, order, isPaid = false, price = 0,  isPublished  } = req.body;
     const userId = req.user?._id;
     
+    console.log(isPublished)
     if (!title) {
       res.status(400).json({ message: 'Course title is required' });
       return;
@@ -47,8 +48,9 @@ export const createCourse = async (
       coverImage,
       order: order || 0,
       createdBy: userId,
-      isPaid: Boolean(isPaid), // Save exactly as true/false
-      price: roundedPrice      // Always save as whole number
+      isPaid: Boolean(isPaid), 
+      isPublished: isPublished === 'true',
+      price: roundedPrice      
     });
 
     res.status(201).json(newCourse);
@@ -63,8 +65,8 @@ export const updateCourse = async (
 ): Promise<void> => {
   try {
     const { courseId } = req.params;
-    const { title, description, order, isPaid, price } = req.body;
-    
+    const { title, description, order, isPaid, price, isPublished } = req.body;
+    console.log(isPublished)
     if (!mongoose.Types.ObjectId.isValid(courseId)) {
       res.status(400).json({ message: 'Invalid course ID' });
       return;
@@ -96,6 +98,10 @@ export const updateCourse = async (
     if (title) course.title = title;
     if (description !== undefined) course.description = description;
     if (order !== undefined) course.order = order;
+
+  if (isPublished !== undefined) {
+      course.isPublished = isPublished === 'true';
+    }
 
 
     const oldCoverImage = course.coverImage;
@@ -170,4 +176,5 @@ export const deleteCourse = async (
     next(error);
   }
 };
+
 
