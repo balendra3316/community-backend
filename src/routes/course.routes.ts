@@ -17,7 +17,9 @@ import {
   getCourseDetails, 
   purchaseCourse, 
   getUserPurchasedCourses,
-  getPaymentHistory 
+  getPaymentHistory, 
+  getPublicCourseInfo,
+  getCourseAccessDetails
 } from '../controllers/course.controller';
 import { protect } from '../middleware/auth.middleware'; // Assume you have this middleware
 import { toggleLessonCompletion } from '../controllers/progress.controller';
@@ -35,6 +37,10 @@ router.get('/:courseId',protect, getCourseDetails);
 
 
 router.post('/progress/toggle', protect, toggleLessonCompletion);
+
+
+router.get('/public/:courseId', getPublicCourseInfo);
+router.get('/access-details/:courseId',protect, getCourseAccessDetails)
 
 
 

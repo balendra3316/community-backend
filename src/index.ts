@@ -21,7 +21,7 @@ import adminRoutes from "./routes/admin.routes";
 import chatRoutes from "./routes/chatRoutes"
 import attendanceRoutes from "./routes/attendance.route"
 import { processAndStoreKnowledge } from "./prepare-knowledge";
-import Course from "./models/Course.model";
+
 
 dotenv.config();
 
@@ -85,23 +85,6 @@ app.use('/api/attendance', attendanceRoutes);
 
 
 
-const addIsPublishedToCourses = async () => {
-  try {
-    console.log("--- Running one-time script: Adding isPublished field to courses ---");
-
-    const result = await Course.updateMany(
-      { isPublished: { $exists: false } }, // Find courses without the field
-      { $set: { isPublished: true } }      // Set isPublished to true
-    );
-
-    console.log(`Script finished. Matched: ${result.matchedCount}, Modified: ${result.modifiedCount} courses.`);
-  } catch (error) {
-    console.error("Error running one-time script:", error);
-  }
-};
-
-// This will run the function once when the server starts
-addIsPublishedToCourses();
 
 
 

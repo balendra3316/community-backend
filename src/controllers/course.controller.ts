@@ -464,6 +464,9 @@ export const getUserPurchasedCourses = async (
   }
 };
 
+
+
+
 export const getPaymentHistory = async (
   req: Request,
   res: Response,
@@ -487,6 +490,91 @@ export const getPaymentHistory = async (
     next(error);
   }
 };
+
+
+
+
+/**
+ * @desc    Get public-facing course information
+ * @route   GET /api/courses/public/:courseId
+ * @access  Public
+ */
+export const getPublicCourseInfo = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { courseId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      res.status(400).json({ message: "Invalid course ID" });
+      return;
+    }
+
+    const course = await Course.findById(courseId).select(
+      "title description coverImage isPaid price isPublished"
+    );
+
+    if (!course || !course.isPublished) {
+      res.status(404).json({ message: "Course not found or not available" });
+      return;
+    }
+
+    res.status(200).json(course);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Get course details and user's purchase status
+ * @route   GET /api/courses/access-details/:courseId
+ * @access  Protected
+ */
+export const getCourseAccessDetails = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { courseId } = req.params;
+    const userId = req.user?._id;
+
+    console.log(courseId, "user id", userId)
+
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      res.status(400).json({ message: "Invalid course ID" });
+      return;
+    }
+
+    const course = await Course.findById(courseId).select(
+      "title description coverImage isPaid price isPublished"
+    );
+   console.log(course)
+    if (!course || !course.isPublished) {
+      res.status(404).json({ message: "Course not found or not available" });
+      return;
+    }
+    
+    // This assumes req.user is populated by your 'protect' middleware
+    const user = await User.findById(userId);
+    const isPurchased = user?.hasPurchasedCourse(courseId) || false;
+
+    res.status(200).json({
+      ...course.toObject(),
+      isPurchased,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+
+
+
 
 
 
