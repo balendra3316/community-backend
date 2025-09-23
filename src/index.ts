@@ -9,7 +9,7 @@ import connectDB from "./config/db";
 import passport from "./config/passport";
 import { notFound, errorHandler } from "./middleware/error.middleware";
 import { setupSocketIO } from "./socket";
-
+import User from './models/User.model'
 
 import authRoutes from "./routes/auth.routes";
 import postRoutes from "./routes/post.routes";
@@ -22,6 +22,8 @@ import chatRoutes from "./routes/chatRoutes"
 import attendanceRoutes from "./routes/attendance.route"
 import subscriptionRoutes from "./routes/subscription.routes";
 import journalRoutes from "./routes/journal.routes";
+
+
 
 //import { processAndStoreKnowledge } from "./prepare-knowledge";
 
@@ -89,9 +91,40 @@ app.use('/api/journal', journalRoutes);
 
 
 
+const addManualSubscription = async (): Promise<void> => {
+  try {
+    const userEmail = 'parva17861@gmail.com';
+    
+    // Calculate an expiry date 30 days from now
+    const subscriptionEndDate = new Date();
+    subscriptionEndDate.setDate(subscriptionEndDate.getDate() + 30);
 
+    // Find the user by email and update their subscription
+    const updatedUser = await User.findOneAndUpdate(
+      { email: userEmail },
+      {
+        $set: {
+          'subscription.status': 'active',
+          'subscription.endDate': subscriptionEndDate,
+        },
+      },
+      { new: true } // This option returns the updated document
+    );
 
+    if (updatedUser) {
+      console.log('✅ SUCCESS: Subscription successfully added!');
+      console.log(`User: ${updatedUser.name} (${updatedUser.email})`);
+      console.log(`New Status: ${updatedUser.subscription.status}`);
+      console.log(`Expires On: ${updatedUser.subscription.endDate?.toDateString()}`);
+    } else {
+      console.error(`❌ ERROR: Could not find user with email: ${userEmail}`);
+    }
+  } catch (error) {
+    console.error('❌ ERROR: An error occurred while adding the subscription:', error);
+  }
+};
 
+addManualSubscription();
 
 
 

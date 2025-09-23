@@ -77,7 +77,6 @@ const UserSchema: Schema = new Schema(
     points: { type: Number, default: 0, min: [0, 'Points cannot be negative'], index: true },
     myPurchasedCourses: [{ type: Schema.Types.ObjectId, ref: 'Course' }],
     
-    // --- NEW SCHEMA DEFINITIONS ---
     dob: { type: Date },
     city: { type: String, trim: true, maxlength: [50, 'City cannot exceed 50 characters'] },
     bloodGroup: { type: String, trim: true, maxlength: [5, 'Blood group cannot exceed 5 characters'] },

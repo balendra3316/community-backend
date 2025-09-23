@@ -4,7 +4,7 @@ export interface IPayment extends Document {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
   courseId?: Types.ObjectId;
-   paymentType: 'course' | 'subscription'; 
+ paymentType: 'course' | 'subscription'; 
   amount: number;
   currency: string;
   razorpayOrderId: string;
@@ -34,6 +34,12 @@ const PaymentSchema: Schema = new Schema(
       required: true,
       min: [0, 'Amount cannot be negative']
     },
+     paymentType: {
+      type: String,
+      enum: ['course', 'subscription'],
+      required: true,
+      index: true
+    },
     currency: {
       type: String,
       default: 'INR',
@@ -42,7 +48,7 @@ const PaymentSchema: Schema = new Schema(
     razorpayOrderId: {
       type: String,
       required: true,
-      unique: true
+
     },
     razorpayPaymentId: {
       type: String,
