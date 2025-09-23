@@ -3,6 +3,14 @@
 
 import mongoose, { Document, Schema, Types } from 'mongoose';
 
+
+export interface ISubscription {
+  status: 'none' | 'active' | 'expired';
+  endDate?: Date;
+}
+
+
+
 export interface IUser extends Document {
   _id: Types.ObjectId;
   googleId: string;
@@ -16,8 +24,6 @@ export interface IUser extends Document {
   myPurchasedCourses: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
-  
-  // --- NEW FIELDS ---
   dob?: Date;
   city?: string;
   bloodGroup?: string;
@@ -28,8 +34,29 @@ export interface IUser extends Document {
   height?: number; // in cm
   weight?: number; // in kg
 
+ subscription: ISubscription;
+  currentStreak: number;
+  longestStreak: number;
+  lastPracticeDate?: Date;
+
+
+
+
   hasPurchasedCourse(courseId: string | Types.ObjectId): boolean;
 }
+
+
+const SubscriptionSchema: Schema = new Schema({
+  status: {
+    type: String,
+    enum: ['none', 'active', 'expired'],
+    default: 'none',
+  },
+  endDate: { type: Date },
+}, { _id: false });
+
+
+
 
 const UserSchema: Schema = new Schema(
   {
@@ -60,6 +87,10 @@ const UserSchema: Schema = new Schema(
     acdStarClubRegisterDate: { type: Date },
     height: { type: Number, min: 0, max: 300 }, // in cm
     weight: { type: Number, min: 0, max: 500 }, // in kg
+    subscription: { type: SubscriptionSchema, default: () => ({}) },
+    currentStreak: { type: Number, default: 0 },
+    longestStreak: { type: Number, default: 0 },
+    lastPracticeDate: { type: Date },
   },
   { 
     timestamps: true,

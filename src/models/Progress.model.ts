@@ -1,37 +1,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface IProgress extends Document {

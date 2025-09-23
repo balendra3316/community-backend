@@ -390,6 +390,7 @@ export const purchaseCourse = async (
     const payment = new Payment({
       userId,
       courseId,
+      paymentType: 'course',
       amount: paymentAmount,
       currency: 'INR',
       razorpayOrderId: razorpayOrderId || `temp_order_${Date.now()}`,
@@ -551,7 +552,7 @@ export const getCourseAccessDetails = async (
     const course = await Course.findById(courseId).select(
       "title description coverImage isPaid price isPublished"
     );
-   console.log(course)
+   //console.log(course)
     if (!course || !course.isPublished) {
       res.status(404).json({ message: "Course not found or not available" });
       return;

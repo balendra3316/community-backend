@@ -3,7 +3,8 @@ import mongoose, { Document, Schema, Types } from 'mongoose';
 export interface IPayment extends Document {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
-  courseId: Types.ObjectId;
+  courseId?: Types.ObjectId;
+   paymentType: 'course' | 'subscription'; 
   amount: number;
   currency: string;
   razorpayOrderId: string;
@@ -26,7 +27,6 @@ const PaymentSchema: Schema = new Schema(
     courseId: {
       type: Schema.Types.ObjectId,
       ref: 'Course',
-      required: true,
       index: true
     },
     amount: {
@@ -71,6 +71,6 @@ const PaymentSchema: Schema = new Schema(
 
 PaymentSchema.index({ userId: 1, courseId: 1 });
 PaymentSchema.index({ userId: 1, status: 1 });
-PaymentSchema.index({ razorpayOrderId: 1, status: 1 });
+// PaymentSchema.index({ razorpayOrderId: 1, status: 1 });
 
 export default mongoose.model<IPayment>('Payment', PaymentSchema);

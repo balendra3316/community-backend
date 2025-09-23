@@ -20,7 +20,10 @@ import courseRoutes from "./routes/course.routes";
 import adminRoutes from "./routes/admin.routes";
 import chatRoutes from "./routes/chatRoutes"
 import attendanceRoutes from "./routes/attendance.route"
-import { processAndStoreKnowledge } from "./prepare-knowledge";
+import subscriptionRoutes from "./routes/subscription.routes";
+import journalRoutes from "./routes/journal.routes";
+
+//import { processAndStoreKnowledge } from "./prepare-knowledge";
 
 
 dotenv.config();
@@ -80,6 +83,9 @@ app.use("/api/courses", courseRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api", chatRoutes);
 app.use('/api/attendance', attendanceRoutes);
+
+app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/journal', journalRoutes);
 
 
 
