@@ -10,6 +10,7 @@ import passport from "./config/passport";
 import { notFound, errorHandler } from "./middleware/error.middleware";
 import { setupSocketIO } from "./socket";
 import User from './models/User.model'
+import { LEVEL_CONFIG } from '../src/services/LeaderboardBadge';
 
 import authRoutes from "./routes/auth.routes";
 import postRoutes from "./routes/post.routes";
@@ -91,40 +92,11 @@ app.use('/api/journal', journalRoutes);
 
 
 
-const addManualSubscription = async (): Promise<void> => {
-  try {
-    const userEmail = 'parva17861@gmail.com';
-    
-    // Calculate an expiry date 30 days from now
-    const subscriptionEndDate = new Date();
-    subscriptionEndDate.setDate(subscriptionEndDate.getDate() + 30);
 
-    // Find the user by email and update their subscription
-    const updatedUser = await User.findOneAndUpdate(
-      { email: userEmail },
-      {
-        $set: {
-          'subscription.status': 'active',
-          'subscription.endDate': subscriptionEndDate,
-        },
-      },
-      { new: true } // This option returns the updated document
-    );
 
-    if (updatedUser) {
-      console.log('✅ SUCCESS: Subscription successfully added!');
-      console.log(`User: ${updatedUser.name} (${updatedUser.email})`);
-      console.log(`New Status: ${updatedUser.subscription.status}`);
-      console.log(`Expires On: ${updatedUser.subscription.endDate?.toDateString()}`);
-    } else {
-      console.error(`❌ ERROR: Could not find user with email: ${userEmail}`);
-    }
-  } catch (error) {
-    console.error('❌ ERROR: An error occurred while adding the subscription:', error);
-  }
-};
 
-addManualSubscription();
+
+
 
 
 
@@ -161,3 +133,113 @@ server.listen(PORT, () => {});
 
 // // --- 3. CALL THE STARTUP FUNCTION ---
 // startServer();
+
+
+
+
+
+
+
+// const addManualSubscription = async (): Promise<void> => {
+//   try {
+//     const userEmail = 'parva17861@gmail.com';
+    
+//     // Calculate an expiry date 30 days from now
+//     const subscriptionEndDate = new Date();
+//     subscriptionEndDate.setDate(subscriptionEndDate.getDate() + 30);
+
+//     // Find the user by email and update their subscription
+//     const updatedUser = await User.findOneAndUpdate(
+//       { email: userEmail },
+//       {
+//         $set: {
+//           'subscription.status': 'active',
+//           'subscription.endDate': subscriptionEndDate,
+//         },
+//       },
+//       { new: true } // This option returns the updated document
+//     );
+
+//     if (updatedUser) {
+//       console.log('✅ SUCCESS: Subscription successfully added!');
+//       console.log(`User: ${updatedUser.name} (${updatedUser.email})`);
+//       console.log(`New Status: ${updatedUser.subscription.status}`);
+//       console.log(`Expires On: ${updatedUser.subscription.endDate?.toDateString()}`);
+//     } else {
+//       console.error(`❌ ERROR: Could not find user with email: ${userEmail}`);
+//     }
+//   } catch (error) {
+//     console.error('❌ ERROR: An error occurred while adding the subscription:', error);
+//   }
+// };
+
+// addManualSubscription();
+
+
+
+
+
+
+// export const runBadgeBackfill = async (): Promise<void> => {
+//     console.log('--- Starting one-time backfill for user levels and badges ---');
+//     try {
+//         const users = await User.find({}, 'points leaderboardBadges level').cursor();
+
+//         let updatedCount = 0;
+//         for await (const user of users) {
+//             const userPoints = user.points;
+//             let newLevel = 0;
+//             // Create a quick lookup of levels the user already has
+//             const awardedLevels = new Set(user.leaderboardBadges.map(badge => badge.level));
+
+//             // Determine the highest level the user has earned based on their points
+//             for (const levelInfo of LEVEL_CONFIG) {
+//                 if (userPoints >= levelInfo.points) {
+//                     newLevel = levelInfo.level;
+//                 } else {
+//                     break; // No need to check higher levels
+//                 }
+//             }
+
+//             // Find all badges the user should have but doesn't yet
+//             const badgesToAward = LEVEL_CONFIG
+//                 .filter(levelInfo => userPoints >= levelInfo.points && !awardedLevels.has(levelInfo.level));
+
+//             let wasModified = false;
+
+//             // Add the new badges if any were found
+//             if (badgesToAward.length > 0) {
+//                 const newBadges = badgesToAward.map(levelInfo => ({
+//                     name: levelInfo.name,
+//                     level: levelInfo.level,
+//                     earnedAt: new Date(),
+//                 }));
+//                 user.leaderboardBadges.push(...newBadges);
+//                 wasModified = true;
+//             }
+
+//             // Update the user's main level if it's different
+//             if (user.level !== newLevel) {
+//                 user.level = newLevel;
+//                 wasModified = true;
+//             }
+
+//             // Only save to the database if a change was actually made
+//             if (wasModified) {
+//                 await user.save();
+//                 updatedCount++;
+//             }
+//         }
+
+//         console.log(`[SUCCESS] Backfill complete. ${updatedCount} users were updated.`);
+//         console.log('--- You can now safely remove the runBadgeBackfill() call from your server startup file. ---');
+
+//     } catch (error) {
+//         console.error('[ERROR] An error occurred during the backfill process:', error);
+//     }
+// };
+
+
+
+
+// runBadgeBackfill();

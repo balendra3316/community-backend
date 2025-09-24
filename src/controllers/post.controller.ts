@@ -15,6 +15,7 @@ import {
 import { BunnyStorageService } from "../services/bunnyStorage.service";
 import { BunnyStreamService } from "../services/bunnyStream.service";
 import { bunnyConfig } from "../config/bunnyStorage.config";
+import { checkAndAwardBadges } from '../services/LeaderboardBadge';
 
 export const deleteImageFromBunnyStorage = async (
   imageUrl: string
@@ -57,6 +58,8 @@ export const updateUserPoints = async (
         userId,
         points: delta,
       });
+
+      await checkAndAwardBadges(userId);
     }
   } catch (error) {}
 };
@@ -161,7 +164,7 @@ export const getPosts = async (req: Request, res: Response): Promise<void> => {
     const posts = await baseQuery
       .skip(skip)
       .limit(limit)
-      .populate("author", "name avatar")
+      .populate("author", "name avatar subscription leaderboardBadges")
       .lean();
 
     const total = await Post.countDocuments();
@@ -176,6 +179,8 @@ export const getPosts = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
 
 export const getPost = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -196,7 +201,7 @@ export const getPost = async (req: Request, res: Response): Promise<void> => {
     const commentsWithReplies = await Promise.all(
       comments.map(async (comment) => {
         const replies = await Comment.find({ parent: comment._id })
-          .populate("author", "name avatar")
+          .populate("author", "name avatar subscription leaderboardBadges")
           .sort({ createdAt: 1 })
           .lean();
         return { ...comment, replies };

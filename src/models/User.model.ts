@@ -9,7 +9,11 @@ export interface ISubscription {
   endDate?: Date;
 }
 
-
+export interface ILeaderboardBadge {
+  name: string;
+  level: number;
+  earnedAt: Date;
+}
 
 export interface IUser extends Document {
   _id: Types.ObjectId;
@@ -19,8 +23,10 @@ export interface IUser extends Document {
   avatar: string;
   isAdmin: boolean;
   badges: string[];
+  leaderboardBadges: ILeaderboardBadge[];   //new
   bio: string;
   points: number;
+   level: number;   //new
   myPurchasedCourses: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
@@ -41,7 +47,6 @@ export interface IUser extends Document {
 
 
 
-
   hasPurchasedCourse(courseId: string | Types.ObjectId): boolean;
 }
 
@@ -54,6 +59,15 @@ const SubscriptionSchema: Schema = new Schema({
   },
   endDate: { type: Date },
 }, { _id: false });
+
+
+
+const LeaderboardBadgeSchema: Schema = new Schema({
+  name: { type: String, required: true },
+  level: { type: Number, required: true },
+  earnedAt: { type: Date, default: Date.now },
+}, { _id: false });
+
 
 
 
@@ -75,6 +89,8 @@ const UserSchema: Schema = new Schema(
     badges: [{ type: String, trim: true }],
     bio: { type: String, default: '', maxlength: [500, 'Bio cannot exceed 500 characters'], trim: true },
     points: { type: Number, default: 0, min: [0, 'Points cannot be negative'], index: true },
+    level: { type: Number, default: 0 },
+    leaderboardBadges: { type: [LeaderboardBadgeSchema], default: [] },
     myPurchasedCourses: [{ type: Schema.Types.ObjectId, ref: 'Course' }],
     
     dob: { type: Date },
