@@ -46,6 +46,7 @@ const JournalEntrySchema: Schema = new Schema(
     notes: {
       type: String,
       maxlength: [500, 'Notes cannot be more than 500 characters'],
+      required: [true, 'Notes are required'],
       trim: true,
       default: ''
     },
