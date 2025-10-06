@@ -22,7 +22,7 @@ const ProgressSchema: Schema = new Schema(
     completedLessons: [{ type: Schema.Types.ObjectId, ref: 'Lesson' }],
     lastAccessedLesson: { type: Schema.Types.ObjectId, ref: 'Lesson' },
     completionPercentage: { type: Number, default: 0 },
-    pointsAwarded: { type: Boolean, default: false } // Default to false (no points awarded yet)
+    pointsAwarded: { type: Boolean, default: false } 
   },
   { timestamps: true }
 );

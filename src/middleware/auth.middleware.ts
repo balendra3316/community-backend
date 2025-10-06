@@ -77,3 +77,47 @@ export const adminOnly = (
     res.status(403).json({ message: 'Not authorized as an admin' });
   }
 };
+
+
+
+
+
+
+
+// export const optionalProtect = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ): Promise<void> => {
+//   try {
+//     let token;
+
+//     if (req.cookies.token) {
+//       token = req.cookies.token;
+//     } else if (req.headers.authorization?.startsWith('Bearer')) {
+//       token = req.headers.authorization.split(' ')[1];
+//     }
+
+//     // This is the key difference: if no token, just move on
+//     if (!token) {
+//       return next();
+//     }
+
+//     if (!process.env.JWT_SECRET) {
+//       throw new Error('JWT_SECRET is not defined');
+//     }
+
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET) as { id: string };
+//     const user = await User.findById(decoded.id);
+
+//     // If token is valid, attach user. If not, just move on.
+//     if (user) {
+//       req.user = user;
+//     }
+
+//     next();
+//   } catch (error) {
+//     // In case of an invalid token, don't block the request, just proceed without a user.
+//     next();
+//   }
+// };

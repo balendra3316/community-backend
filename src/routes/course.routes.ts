@@ -19,7 +19,9 @@ import {
   getUserPurchasedCourses,
   getPaymentHistory, 
   getPublicCourseInfo,
-  getCourseAccessDetails
+  getCourseAccessDetails,
+  createCourseOrder,
+  verifyCoursePayment
 } from '../controllers/course.controller';
 import { protect } from '../middleware/auth.middleware'; // Assume you have this middleware
 import { toggleLessonCompletion } from '../controllers/progress.controller';
@@ -27,7 +29,12 @@ import { toggleLessonCompletion } from '../controllers/progress.controller';
 const router = express.Router();
 
 
-router.get('/',protect, getAllCourses); // This will return only free courses for non-authenticated users
+router.get('/',protect, getAllCourses);
+router.post('/create-order',protect,createCourseOrder)
+router.post('/verify-payment', protect,verifyCoursePayment)
+
+        
+
 
 
 router.get('/purchased',  getUserPurchasedCourses);

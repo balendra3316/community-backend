@@ -10,6 +10,166 @@ import User from "../models/User.model";
 import Payment from "../models/Payment.model";
 import mongoose from "mongoose";
 import { Request, Response, NextFunction } from "express";
+import Razorpay from "razorpay";
+import crypto from "crypto";
+
+// export const getAllCourses = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ): Promise<void> => {
+//   try {
+//     const userId = req.user?._id;
+    
+
+
+// Course.updateMany(
+//    { isPublished: { $exists: false } },
+//    { $set: { isPublished: true } }
+// )
+
+
+
+//     if (!userId) {
+
+//       const courses = await Course.find({ 
+//         isPaid: false, 
+//         isPublished: true 
+//       }).sort({ order: 1 });
+//       const coursesWithPayment = courses.map(course => ({
+//         ...course.toObject(),
+//         isAccessible: true,
+//         needsPayment: false,
+//         progress: null
+//       }));
+//       res.status(200).json(coursesWithPayment);
+//       return;
+//     }
+
+
+//     const user = await User.findById(userId);
+//     const purchasedCourseIds = user?.myPurchasedCourses || [];
+
+//     const coursesWithProgress = await Course.aggregate([
+//       { 
+//         $match: { isPublished: true } 
+//       },
+//       { $sort: { order: 1 } },
+//       {
+//         $lookup: {
+//           from: "progresses",
+//           let: { courseId: "$_id" },
+//           pipeline: [
+//             {
+//               $match: {
+//                 $expr: {
+//                   $and: [
+//                     { $eq: ["$courseId", "$$courseId"] },
+//                     {
+//                       $eq: [
+//                         "$userId",
+//                         new mongoose.Types.ObjectId(userId.toString()),
+//                       ],
+//                     },
+//                   ],
+//                 },
+//               },
+//             },
+//             { $project: { completedLessons: 1, _id: 0 } },
+//           ],
+//           as: "progressData",
+//         },
+//       },
+//       {
+//         $project: {
+//           _id: 1,
+//           title: 1,
+//           description: 1,
+//           coverImage: 1,
+//           order: 1,
+//           totalLessons: 1,
+//           isPaid: 1,
+//           price: 1,
+//           createdAt: 1,
+//           updatedAt: 1,
+//           createdBy: 1,
+//           progress: {
+//             completionPercentage: {
+//               $cond: [
+//                 { $gt: ["$totalLessons", 0] },
+//                 {
+//                   $multiply: [
+//                     {
+//                       $divide: [
+//                         {
+//                           $size: {
+//                             $ifNull: [
+//                               {
+//                                 $arrayElemAt: [
+//                                   "$progressData.completedLessons",
+//                                   0,
+//                                 ],
+//                               },
+//                               [],
+//                             ],
+//                           },
+//                         },
+//                         "$totalLessons",
+//                       ],
+//                     },
+//                     100,
+//                   ],
+//                 },
+//                 0,
+//               ],
+//             },
+//           },
+//         },
+//       },
+//       {
+//         $addFields: {
+//           "progress.completionPercentage": {
+//             $round: ["$progress.completionPercentage", 0],
+//           },
+//         },
+//       },
+//     ]);
+
+
+//     const coursesWithAccessInfo = coursesWithProgress.map(course => {
+//       const courseId = course._id.toString();
+//       const isPurchased = purchasedCourseIds.some((id: mongoose.Types.ObjectId) => 
+//         id.toString() === courseId
+//       );
+//       const isAccessible = !course.isPaid || isPurchased;
+      
+//       return {
+//         ...course,
+//         isAccessible,
+//         needsPayment: course.isPaid && !isPurchased,
+//         progress: isAccessible ? course.progress : null
+//       };
+//     });
+
+//     res.status(200).json(coursesWithAccessInfo);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+
+interface AggregatedCourse {
+    _id: mongoose.Types.ObjectId;
+    title: string;
+    description: string;
+    coverImage: string;
+    isPaid: boolean;
+    price: number;
+    totalLessons: number;
+    progress: { completionPercentage: number } | null;
+}
+
+
 
 export const getAllCourses = async (
   req: Request,
@@ -18,141 +178,257 @@ export const getAllCourses = async (
 ): Promise<void> => {
   try {
     const userId = req.user?._id;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
 
-
-Course.updateMany(
-   { isPublished: { $exists: false } },
-   { $set: { isPublished: true } }
-)
-
-
-
-    if (!userId) {
-
-      const courses = await Course.find({ 
-        isPaid: false, 
-        isPublished: true 
-      }).sort({ order: 1 });
-      const coursesWithPayment = courses.map(course => ({
-        ...course.toObject(),
-        isAccessible: true,
-        needsPayment: false,
-        progress: null
-      }));
-      res.status(200).json(coursesWithPayment);
-      return;
+    let purchasedCourseIds: mongoose.Types.ObjectId[] = [];
+    if (userId) {
+      // Fetch only the necessary field from the user document
+      const user = await User.findById(userId).select('myPurchasedCourses').lean();
+      purchasedCourseIds = user?.myPurchasedCourses || [];
     }
 
-
-    const user = await User.findById(userId);
-    const purchasedCourseIds = user?.myPurchasedCourses || [];
-
-    const coursesWithProgress = await Course.aggregate([
-      { 
-        $match: { isPublished: true } 
-      },
+    // Use an aggregation pipeline with $facet for efficient pagination and total counting
+    const aggregationResult = await Course.aggregate([
+      { $match: { isPublished: true } },
       { $sort: { order: 1 } },
       {
-        $lookup: {
-          from: "progresses",
-          let: { courseId: "$_id" },
-          pipeline: [
+        $facet: {
+          // Pipeline for fetching the paginated data
+          paginatedResults: [
+            { $skip: skip },
+            { $limit: limit },
             {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ["$courseId", "$$courseId"] },
-                    {
-                      $eq: [
-                        "$userId",
-                        new mongoose.Types.ObjectId(userId.toString()),
-                      ],
+              // Join with progress collection only for logged-in users
+              $lookup: {
+                from: "progresses",
+                let: { courseId: "$_id" },
+                pipeline: userId ? [
+                  {
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $eq: ["$courseId", "$$courseId"] },
+                          { $eq: ["$userId", new mongoose.Types.ObjectId(userId.toString())] },
+                        ],
+                      },
                     },
-                  ],
-                },
+                  },
+                  { $project: { completionPercentage: 1, _id: 0 } },
+                ] : [], // Empty pipeline if no user
+                as: "progressData",
               },
             },
-            { $project: { completedLessons: 1, _id: 0 } },
+            // Project only the fields needed by the frontend
+            {
+              $project: {
+                title: 1,
+                description: 1,
+                coverImage: 1,
+                isPaid: 1,
+                price: 1,
+                totalLessons: 1,
+                progress: {
+                  $ifNull: [{ $first: "$progressData" }, null]
+                }
+              }
+            }
           ],
-          as: "progressData",
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-          title: 1,
-          description: 1,
-          coverImage: 1,
-          order: 1,
-          totalLessons: 1,
-          isPaid: 1,
-          price: 1,
-          createdAt: 1,
-          updatedAt: 1,
-          createdBy: 1,
-          progress: {
-            completionPercentage: {
-              $cond: [
-                { $gt: ["$totalLessons", 0] },
-                {
-                  $multiply: [
-                    {
-                      $divide: [
-                        {
-                          $size: {
-                            $ifNull: [
-                              {
-                                $arrayElemAt: [
-                                  "$progressData.completedLessons",
-                                  0,
-                                ],
-                              },
-                              [],
-                            ],
-                          },
-                        },
-                        "$totalLessons",
-                      ],
-                    },
-                    100,
-                  ],
-                },
-                0,
-              ],
-            },
-          },
-        },
-      },
-      {
-        $addFields: {
-          "progress.completionPercentage": {
-            $round: ["$progress.completionPercentage", 0],
-          },
-        },
-      },
+          // Pipeline for counting the total number of documents
+          totalCount: [
+            { $count: 'count' }
+          ]
+        }
+      }
     ]);
 
+    const coursesData = aggregationResult[0].paginatedResults;
+    const totalCourses = aggregationResult[0].totalCount[0]?.count || 0;
 
-    const coursesWithAccessInfo = coursesWithProgress.map(course => {
-      const courseId = course._id.toString();
-      const isPurchased = purchasedCourseIds.some((id: mongoose.Types.ObjectId) => 
-        id.toString() === courseId
-      );
+    // Add access information based on user's purchase history
+    const coursesWithAccessInfo = coursesData.map((course: AggregatedCourse) => {
+      const isPurchased = purchasedCourseIds.some(id => id.equals(course._id));
       const isAccessible = !course.isPaid || isPurchased;
-      
       return {
         ...course,
         isAccessible,
         needsPayment: course.isPaid && !isPurchased,
-        progress: isAccessible ? course.progress : null
+        progress: isAccessible ? course.progress : null, // Show progress only if accessible
       };
     });
 
-    res.status(200).json(coursesWithAccessInfo);
+    res.status(200).json({
+      courses: coursesWithAccessInfo,
+      totalPages: Math.ceil(totalCourses / limit),
+      currentPage: page,
+    });
+
   } catch (error) {
     next(error);
   }
 };
+
+
+
+export const createCourseOrder = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { courseId } = req.body;
+    const userId = req.user?._id;
+
+    if (!userId) {
+      res.status(401).json({ message: "Authentication required." });
+      return;
+    }
+
+    const [user, course] = await Promise.all([
+      User.findById(userId),
+      Course.findById(courseId)
+    ]);
+
+    if (!course || !course.isPaid) {
+      res.status(404).json({ message: "Paid course not found." });
+      return;
+    }
+   
+  if (!course.price || course.price <= 0) {
+      res.status(400).json({ message: "Course price is not valid for purchase." });
+      return;
+    }
+
+    if (user?.hasPurchasedCourse(courseId)) {
+      res.status(400).json({ message: "You have already purchased this course." });
+      return;
+    }
+   console.log("start")
+    const razorpayInstance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+ console.log(razorpayInstance)
+ console.log("courseprice", course.price)
+    const options = {
+      amount: course.price * 100, 
+      currency: 'INR',
+      receipt: `rcpt_order_${Date.now()}`,
+      notes: {
+        courseId: courseId.toString(),
+        userId: userId.toString(),
+      }
+    };
+
+    const order = await razorpayInstance.orders.create(options);
+    console.log("order", order)
+    res.status(200).json(order);
+
+  } catch (error:any) {
+    // console.error("----------- RAZORPAY ORDER CREATION FAILED -----------");
+    
+    // // Razorpay errors often have a detailed `error` object inside.
+    // if (error.error) {
+    //   console.error("Detailed Razorpay Error:", error.error);
+    // } else {
+    //   // If it's a different kind of error, log the whole thing.
+    //   console.error("Full Error Object:", error);
+    // }
+    // console.error("----------------------------------------------------");
+    
+    // Send a more informative error message to the frontend
+    res.status(500).json({ 
+      message: "Failed to create Razorpay order.",
+      // Pass the specific reason if it exists
+      reason: error.error?.description || "An internal server error occurred."
+    });
+  }
+};
+
+
+
+export const verifyCoursePayment = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { courseId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    const userId = req.user?._id;
+
+    if (!userId) {
+      res.status(401).json({ message: "Authentication required." });
+      return;
+    }
+
+    if (!courseId || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      res.status(400).json({ message: "Payment verification failed: Missing details." });
+      return;
+    }
+
+    // The core security step: recreate the signature on the server and compare.
+    const body = `${razorpay_order_id}|${razorpay_payment_id}`;
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
+      .update(body)
+      .digest('hex');
+
+    if (expectedSignature !== razorpay_signature) {
+      res.status(400).json({ message: "Payment verification failed: Invalid signature." });
+      return;
+    }
+
+    // If signature is valid, proceed with granting access
+    const [user, course] = await Promise.all([
+      User.findById(userId),
+      Course.findById(courseId)
+    ]);
+
+    if (!user || !course) {
+      res.status(404).json({ message: "User or Course not found." });
+      return;
+    }
+
+    if (user.hasPurchasedCourse(courseId)) {
+      // This is a safeguard in case of duplicate requests
+      res.status(200).json({ message: "Course access already granted." });
+      return;
+    }
+
+    // Record the successful payment
+    const payment = new Payment({
+      userId,
+      courseId,
+      paymentType: 'course',
+      amount: course.price,
+      currency: 'INR',
+      razorpayOrderId: razorpay_order_id,
+      razorpayPaymentId: razorpay_payment_id,
+      razorpaySignature: razorpay_signature,
+      status: 'completed'
+    });
+
+    // Add course to the user's purchased list
+    user.myPurchasedCourses.push(new mongoose.Types.ObjectId(courseId));
+
+    // Save both documents in parallel
+    await Promise.all([payment.save(), user.save()]);
+
+    res.status(200).json({
+      message: "Course purchased successfully!",
+      accessGranted: true
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+
+
 
 
 

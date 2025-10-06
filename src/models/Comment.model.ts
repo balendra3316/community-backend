@@ -62,7 +62,7 @@ const CommentSchema: Schema = new Schema(
   {
     post: { type: Schema.Types.ObjectId, ref: 'Post', required: true },
     author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    content: { type: String, required: true },
+    content: { type: String, required: true, trim: true, maxlength: [1000, 'Comment cannot be more than 1000 characters long'] },
     image: { type: String },
     youtubeLink: { type: String },
     likes: [{ type: Schema.Types.ObjectId, ref: 'User' }],

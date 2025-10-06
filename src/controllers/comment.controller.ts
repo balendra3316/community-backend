@@ -272,6 +272,11 @@ const buildCommentTree = (comments: any[]): any[] => {
 };
 
 
+
+
+
+
+
 export const getCommentsByPost = async (
   req: Request,
   res: Response
@@ -393,3 +398,16 @@ export const getCommentsByPost = async (
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
