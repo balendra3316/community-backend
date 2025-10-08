@@ -10,7 +10,7 @@ export interface IProgress extends Document {
   completedLessons: Types.ObjectId[];
   lastAccessedLesson?: Types.ObjectId;
   completionPercentage: number;
-  pointsAwarded: boolean; // New field to track if points were awarded
+  pointsAwarded: boolean; 
   updatedAt: Date;
   createdAt: Date;
 }

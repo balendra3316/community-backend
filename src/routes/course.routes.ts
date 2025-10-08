@@ -15,7 +15,7 @@ import express from 'express';
 import { 
   getAllCourses, 
   getCourseDetails, 
-  purchaseCourse, 
+ 
   getUserPurchasedCourses,
   getPaymentHistory, 
   getPublicCourseInfo,
@@ -23,7 +23,7 @@ import {
   createCourseOrder,
   verifyCoursePayment
 } from '../controllers/course.controller';
-import { protect } from '../middleware/auth.middleware'; // Assume you have this middleware
+import { protect } from '../middleware/auth.middleware'; 
 import { toggleLessonCompletion } from '../controllers/progress.controller';
 
 const router = express.Router();
@@ -39,7 +39,7 @@ router.post('/verify-payment', protect,verifyCoursePayment)
 
 router.get('/purchased',  getUserPurchasedCourses);
 router.get('/payments', protect, getPaymentHistory);
-router.post('/purchase', protect, purchaseCourse);
+//router.post('/purchase', protect, purchaseCourse);
 router.get('/:courseId',protect, getCourseDetails);
 
 

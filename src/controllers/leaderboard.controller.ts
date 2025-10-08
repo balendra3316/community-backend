@@ -361,7 +361,8 @@ function lookupUserWithLatestBadge() {
 // ============== ALL-TIME ==============
 export const getAllTimeLeaderboard = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = new mongoose.Types.ObjectId(req.user?._id);
+    //const userId = new mongoose.Types.ObjectId(req.user?._id);
+    const userId = req.user?._id;
     const limit = parseInt(req.query.limit as string) || 10;
 
     // Top list with latestBadge for each user
@@ -498,7 +499,8 @@ export const getAllTimeLeaderboard = async (req: Request, res: Response): Promis
 // ============== WEEKLY ==============
 export const getWeeklyLeaderboard = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = new mongoose.Types.ObjectId(req.user?._id);
+    //const userId = new mongoose.Types.ObjectId(req.user?._id);
+    const userId = req.user?._id;
     const limit = parseInt(req.query.limit as string) || 10;
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -613,7 +615,9 @@ export const getWeeklyLeaderboard = async (req: Request, res: Response): Promise
 // ============== MONTHLY ==============
 export const getMonthlyLeaderboard = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = new mongoose.Types.ObjectId(req.user?._id);
+    //const userId = new mongoose.Types.ObjectId(req.user?._id);
+    const userId = req.user?._id;
+    
     const limit = parseInt(req.query.limit as string) || 10;
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);

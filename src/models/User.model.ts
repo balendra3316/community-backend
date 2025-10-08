@@ -21,7 +21,7 @@ export interface IUser extends Document {
   email: string;
   name: string;
   avatar: string;
-  isAdmin: boolean;
+  
   badges: string[];
   leaderboardBadges: ILeaderboardBadge[];   //new
   bio: string;
@@ -74,8 +74,8 @@ const LeaderboardBadgeSchema: Schema = new Schema({
 
 const UserSchema: Schema = new Schema(
   {
-    googleId: { type: String, required: true, unique: true, index: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
+    googleId: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true},
     name: { type: String, required: true, trim: true, maxlength: [100, 'Name cannot exceed 100 characters'] },
     avatar: { 
       type: String, 
@@ -85,10 +85,10 @@ const UserSchema: Schema = new Schema(
         message: 'Avatar must be a valid URL'
       }
     },
-    isAdmin: { type: Boolean, default: false, index: true },
+    
     badges: [{ type: String, trim: true }],
     bio: { type: String, default: '', maxlength: [500, 'Bio cannot exceed 500 characters'], trim: true },
-    points: { type: Number, default: 0, min: [0, 'Points cannot be negative'], index: true },
+    points: { type: Number, default: 0, min: [0, 'Points cannot be negative'] },
     level: { type: Number, default: 0 },
     leaderboardBadges: { type: [LeaderboardBadgeSchema], default: [] },
     myPurchasedCourses: [{ type: Schema.Types.ObjectId, ref: 'Course' }],
@@ -113,9 +113,9 @@ const UserSchema: Schema = new Schema(
   }
 );
 
-// --- OTHER METHODS AND INDEXES (Unchanged) ---
 
-UserSchema.index({ name: 'text', bio: 'text' }, { name: 'user_search_index' });
+
+//UserSchema.index({ name: 'text', bio: 'text' }, { name: 'user_search_index' });
 UserSchema.index({ email: 1, googleId: 1 });
 UserSchema.index({ points: -1, createdAt: -1 });
 

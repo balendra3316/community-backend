@@ -9,8 +9,10 @@ import connectDB from "./config/db";
 import passport from "./config/passport";
 import { notFound, errorHandler } from "./middleware/error.middleware";
 import { setupSocketIO } from "./socket";
-import User from './models/User.model'
-import { LEVEL_CONFIG } from '../src/services/LeaderboardBadge';
+ 
+
+
+
 
 import authRoutes from "./routes/auth.routes";
 import postRoutes from "./routes/post.routes";
@@ -89,6 +91,7 @@ app.use('/api/attendance', attendanceRoutes);
 
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/journal', journalRoutes);
+
 
 
 
@@ -243,3 +246,42 @@ server.listen(PORT, () => {});
 
 
 // runBadgeBackfill();
+
+
+
+
+
+
+
+
+
+// async function dropIndex() {
+//   try {
+    
+    
+
+//     // This command will drop the index by its name
+//     // You can find the name by checking the collection's indexes in a shell or GUI.
+//     // A single-field index is usually `field_name_1`
+//     const indexName = 'googleId_1'; 
+//     const indexResult = await User.collection.dropIndex(indexName);
+
+//     console.log(`Successfully dropped index '${indexName}' from 'users' collection.`);
+//     console.log(indexResult);
+
+//   } catch (err:any) {
+//     // If the index doesn't exist, it will throw an error.
+//     if (err.code === 27) { // 27 is the error code for "index not found"
+//         console.log(`Index  not found. It may have already been dropped.`);
+//     } else {
+//         console.error("Error dropping index:", err);
+//     }
+//   } finally {
+    
+//     console.log("MongoDB disconnected.");
+//   }
+// }
+
+// // Call the function
+// dropIndex();
+

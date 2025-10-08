@@ -33,7 +33,6 @@ const AttendanceSchema: Schema = new Schema(
   }
 );
 
-// Create an index on the attendance date for faster lookups
-AttendanceSchema.index({ 'attendance.date': 1 });
+AttendanceSchema.index({ createdAt: -1 });
 
 export default mongoose.model<IAttendance>('StarClubAttendance', AttendanceSchema);

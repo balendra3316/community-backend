@@ -29,7 +29,7 @@ const NotificationSchema: Schema = new Schema(
 
 NotificationSchema.index({ recipient: 1, createdAt: -1 }); // For getNotifications query
 NotificationSchema.index({ recipient: 1, read: 1 }); // For unread count and markAllAsRead
-NotificationSchema.index({ recipient: 1, _id: 1 }); // For markAsRead query
+//NotificationSchema.index({ recipient: 1, _id: 1 }); 
 
 
 NotificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 3 * 24 * 60 * 60 });

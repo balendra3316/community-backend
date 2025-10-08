@@ -13,7 +13,6 @@ const PointsHistorySchema: Schema = new Schema(
       type: Schema.Types.ObjectId, 
       ref: 'User',
       required: true,
-      index: true 
     },
     points: { 
       type: Number, 
@@ -31,7 +30,7 @@ PointsHistorySchema.index({ createdAt: 1 }, { expireAfterSeconds: 30 * 24 * 60 *
 PointsHistorySchema.index({ userId: 1, createdAt: -1 });
 
 
-PointsHistorySchema.index({ createdAt: -1 });
+
 
 export default mongoose.model<IPointsHistory>('PointsHistory', PointsHistorySchema);
 

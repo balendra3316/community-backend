@@ -726,6 +726,7 @@ export const deleteLesson = async (
 
 
 
+
 async function recalculateProgressForCourse(courseId: mongoose.Types.ObjectId) {
     try {
 

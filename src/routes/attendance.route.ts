@@ -1,5 +1,5 @@
 import express from 'express';
-import { exportAllAttendance, getAttendanceData, markAttendance, registerUser } from '../controllers/attendance.controller';
+import { exportAllAttendance, getAttendanceData} from '../controllers/attendance.controller';
 import { protectAdminRoute } from '../middleware/adminauth.middleware';
 
 
@@ -8,16 +8,18 @@ import { protect } from '../middleware/auth.middleware';
 
 const router = express.Router();
 
-// Route: POST /api/attendance/mark
-router.post('/mark', markAttendance);
+
+// admin route for attendance
+
 router.get('/get',  getAttendanceData)
 
-router.post('/register', registerUser);
+
 
 router.get('/export-all',protectAdminRoute , exportAllAttendance);
 
 
 // new route for community attendace
+
 
 
 

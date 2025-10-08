@@ -210,7 +210,8 @@ export const getAllCourses = async (
                       $expr: {
                         $and: [
                           { $eq: ["$courseId", "$$courseId"] },
-                          { $eq: ["$userId", new mongoose.Types.ObjectId(userId.toString())] },
+                          { $eq: ["$userId", userId] },
+                          // { $eq: ["$userId", new mongoose.Types.ObjectId(userId.toString())] },
                         ],
                       },
                     },
@@ -409,8 +410,9 @@ export const verifyCoursePayment = async (
       status: 'completed'
     });
 
-    // Add course to the user's purchased list
-    user.myPurchasedCourses.push(new mongoose.Types.ObjectId(courseId));
+    
+    //user.myPurchasedCourses.push(new mongoose.Types.ObjectId(courseId));
+        user.myPurchasedCourses.push(courseId);
 
     // Save both documents in parallel
     await Promise.all([payment.save(), user.save()]);
@@ -574,127 +576,128 @@ export const getCourseDetails = async (
 
 
 
-
-export const purchaseCourse = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const { courseId, paymentAmount, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
-    const userId = req.user?._id;
-
-
+// // not anymore use this function
+// export const purchaseCourse = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ): Promise<void> => {
+//   try {
+//     const { courseId, paymentAmount, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
+//     const userId = req.user?._id;
 
 
-    if (!userId) {
-      res.status(401).json({ message: "Authentication required" });
-      return;
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(courseId)) {
-      res.status(400).json({ message: "Invalid course ID" });
-      return;
-    }
 
 
-    if (!paymentAmount || !razorpayPaymentId) {
-      res.status(400).json({ 
-        message: "Missing required payment information",
-        missing: {
-          paymentAmount: !paymentAmount,
-          razorpayPaymentId: !razorpayPaymentId
-        }
-      });
-      return;
-    }
+//     if (!userId) {
+//       res.status(401).json({ message: "Authentication required" });
+//       return;
+//     }
+
+//     if (!mongoose.Types.ObjectId.isValid(courseId)) {
+//       res.status(400).json({ message: "Invalid course ID" });
+//       return;
+//     }
 
 
-    const course = await Course.findById(courseId);
-    if (!course) {
-      res.status(404).json({ message: "Course not found" });
-      return;
-    }
+//     if (!paymentAmount || !razorpayPaymentId) {
+//       res.status(400).json({ 
+//         message: "Missing required payment information",
+//         missing: {
+//           paymentAmount: !paymentAmount,
+//           razorpayPaymentId: !razorpayPaymentId
+//         }
+//       });
+//       return;
+//     }
 
-    if (!course.isPaid) {
-      res.status(400).json({ message: "This course is free and doesn't require purchase" });
-      return;
-    }
+
+//     const course = await Course.findById(courseId);
+//     if (!course) {
+//       res.status(404).json({ message: "Course not found" });
+//       return;
+//     }
+
+//     if (!course.isPaid) {
+//       res.status(400).json({ message: "This course is free and doesn't require purchase" });
+//       return;
+//     }
 
 
-    const expectedAmount = course.price;
-    const receivedAmount = paymentAmount;
+//     const expectedAmount = course.price;
+//     const receivedAmount = paymentAmount;
     
-    if (Math.abs(receivedAmount - expectedAmount) > 0.01) { // Allow 1 paisa difference for floating point
-      res.status(400).json({
-        message: "Payment amount doesn't match course price",
-        expected: expectedAmount,
-        received: receivedAmount
-      });
-      return;
-    }
+//     if (Math.abs(receivedAmount - expectedAmount) > 0.01) { // Allow 1 paisa difference for floating point
+//       res.status(400).json({
+//         message: "Payment amount doesn't match course price",
+//         expected: expectedAmount,
+//         received: receivedAmount
+//       });
+//       return;
+//     }
 
 
-    const user = await User.findById(userId);
-    if (!user) {
-      res.status(404).json({ message: "User not found" });
-      return;
-    }
+//     const user = await User.findById(userId);
+//     if (!user) {
+//       res.status(404).json({ message: "User not found" });
+//       return;
+//     }
 
 
-    if (user.hasPurchasedCourse(courseId)) {
-      res.status(400).json({ message: "Course already purchased" });
-      return;
-    }
+//     if (user.hasPurchasedCourse(courseId)) {
+//       res.status(400).json({ message: "Course already purchased" });
+//       return;
+//     }
 
 
 
-    if (process.env.NODE_ENV === 'production' && razorpaySignature) {
-      const crypto = require('crypto');
-      const expectedSignature = crypto
-        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-        .update(razorpayOrderId + '|' + razorpayPaymentId)
-        .digest('hex');
+//     if (process.env.NODE_ENV === 'production' && razorpaySignature) {
+//       const crypto = require('crypto');
+//       const expectedSignature = crypto
+//         .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+//         .update(razorpayOrderId + '|' + razorpayPaymentId)
+//         .digest('hex');
 
-      if (expectedSignature !== razorpaySignature) {
-        res.status(400).json({ message: "Payment signature verification failed" });
-        return;
-      }
-    }
-
-
-    const payment = new Payment({
-      userId,
-      courseId,
-      paymentType: 'course',
-      amount: paymentAmount,
-      currency: 'INR',
-      razorpayOrderId: razorpayOrderId || `temp_order_${Date.now()}`,
-      razorpayPaymentId,
-      razorpaySignature: razorpaySignature || 'temp_signature',
-      status: 'completed'
-    });
-
-    await payment.save();
+//       if (expectedSignature !== razorpaySignature) {
+//         res.status(400).json({ message: "Payment signature verification failed" });
+//         return;
+//       }
+//     }
 
 
-    user.myPurchasedCourses.push(new mongoose.Types.ObjectId(courseId));
-    await user.save();
+//     const payment = new Payment({
+//       userId,
+//       courseId,
+//       paymentType: 'course',
+//       amount: paymentAmount,
+//       currency: 'INR',
+//       razorpayOrderId: razorpayOrderId || `temp_order_${Date.now()}`,
+//       razorpayPaymentId,
+//       razorpaySignature: razorpaySignature || 'temp_signature',
+//       status: 'completed'
+//     });
+
+//     await payment.save();
+
+
+//     //user.myPurchasedCourses.push(new mongoose.Types.ObjectId(courseId));
+//     user.myPurchasedCourses.push(courseId);
+//     await user.save();
 
   
 
-    res.status(200).json({
-      message: "Course purchased successfully",
-      courseId,
-      paymentId: payment._id,
-      accessGranted: true
-    });
+//     res.status(200).json({
+//       message: "Course purchased successfully",
+//       courseId,
+//       paymentId: payment._id,
+//       accessGranted: true
+//     });
 
-  } catch (error) {
+//   } catch (error) {
     
-    next(error);
-  }
-};
+//     next(error);
+//   }
+// };
 
 
 
@@ -890,12 +893,13 @@ export const getAllCoursesAdmin = async (
                 $expr: {
                   $and: [
                     { $eq: ["$courseId", "$$courseId"] },
-                    {
-                      $eq: [
-                        "$userId",
-                        new mongoose.Types.ObjectId(userId.toString()),
-                      ],
-                    },
+                    // {
+                    //   $eq: [
+                    //     "$userId",
+                    //     new mongoose.Types.ObjectId(userId.toString()),
+                    //   ],
+                    // },
+                    { $eq: ["$userId", userId] },
                   ],
                 },
               },

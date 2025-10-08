@@ -73,9 +73,9 @@ const CommentSchema: Schema = new Schema(
 
 
 CommentSchema.index({ post: 1, parent: 1, createdAt: 1 }); // For getting comments by post with replies
-CommentSchema.index({ post: 1, parent: 1 }); // For counting and filtering
-CommentSchema.index({ author: 1 }); // For author-based queries
-CommentSchema.index({ parent: 1 }); // For finding replies
-CommentSchema.index({ createdAt: 1 }); // For sorting by date
+//CommentSchema.index({ post: 1, parent: 1 }); // For counting and filtering
+//CommentSchema.index({ author: 1 }); // for comment by user not for now but in future
+//CommentSchema.index({ parent: 1 }); // For finding replies
+//CommentSchema.index({ createdAt: 1 }); // For sorting by date
 
 export default mongoose.model<IComment>('Comment', CommentSchema);

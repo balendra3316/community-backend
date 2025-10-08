@@ -3,6 +3,9 @@ import Lesson from '../models/Lesson.model';
 import Progress from '../models/Progress.model';
 import mongoose from 'mongoose';
 
+
+
+// not use now
 export const getLessonContent = async (
   req: Request,
   res: Response,

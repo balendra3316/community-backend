@@ -30,8 +30,11 @@ export const toggleLessonCompletion = async (
       return;
     }
 
-    const lessonObjectId = new mongoose.Types.ObjectId(lessonId);
-    const courseObjectId = new mongoose.Types.ObjectId(courseId);
+   // const lessonObjectId = new mongoose.Types.ObjectId(lessonId);
+   const lessonObjectId = lessonId;
+
+    //const courseObjectId = new mongoose.Types.ObjectId(courseId);
+    const courseObjectId = courseId;
 
     let progress = await Progress.findOne({ userId, courseId: courseObjectId });
     if (!progress) {

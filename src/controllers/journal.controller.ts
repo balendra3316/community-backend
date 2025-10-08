@@ -124,7 +124,8 @@ export const getProgressSummary = async (req: Request, res: Response): Promise<v
         // remove depearted ObjectID
         // 1. Calculate Total Minutes using an efficient aggregation pipeline
         const totalMinutesResult = await JournalEntry.aggregate([
-            { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+            // { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+            { $match: { userId: userId } },
             { $group: { _id: null, totalMinutes: { $sum: '$minutes' } } }
         ]);
         const totalMinutes = totalMinutesResult.length > 0 ? totalMinutesResult[0].totalMinutes : 0;

@@ -75,8 +75,8 @@ const PaymentSchema: Schema = new Schema(
 );
 
 
-PaymentSchema.index({ userId: 1, courseId: 1 });
-PaymentSchema.index({ userId: 1, status: 1 });
+//PaymentSchema.index({ userId: 1, courseId: 1 });
+//PaymentSchema.index({ userId: 1, status: 1 });
 // PaymentSchema.index({ razorpayOrderId: 1, status: 1 });
 
 export default mongoose.model<IPayment>('Payment', PaymentSchema);

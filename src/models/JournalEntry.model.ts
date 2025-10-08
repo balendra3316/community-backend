@@ -18,7 +18,6 @@ const JournalEntrySchema: Schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     practiceDate: {
       type: Date,
@@ -56,5 +55,7 @@ const JournalEntrySchema: Schema = new Schema(
     versionKey: false,
   }
 );
+
+JournalEntrySchema.index({ userId: 1, practiceDate: -1 });
 
 export default mongoose.model<IJournalEntry>('JournalEntry', JournalEntrySchema);
