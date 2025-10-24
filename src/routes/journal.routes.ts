@@ -18,7 +18,7 @@ router.route('/')
 
 // But they need an active subscription to create new ones
 router.route('/')
-    .post(protect,  createJournalEntry);
+    .post(protect,checkSubscription, createJournalEntry);
 
 router.route('/dates')
     .get(protect, getJournalDatesForMonth);
@@ -28,7 +28,7 @@ router.route('/:id')
     .put(protect,  updateJournalEntry)
     .delete(protect,  deleteJournalEntry);
 
-router.get('/summary', protect, getProgressSummary);
+router.get('/summary', protect,checkSubscription, getProgressSummary);
 
 
 export default router;
