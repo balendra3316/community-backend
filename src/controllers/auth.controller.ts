@@ -42,7 +42,7 @@ export const getGoogleAuthURL = (req: Request, res: Response): void => {
   res.json({ url: authUrl });
 };
 
-
+const isDeployed = process.env.NODE_ENV === 'production';
 export const googleCallback = async (
   req: Request,
   res: Response
@@ -104,13 +104,31 @@ export const googleCallback = async (
 
     const token = generateToken(user._id.toString());
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    });
+    // res.cookie("token", token, {
+    //   httpOnly: true,
+    //   secure: process.env.NODE_ENV === 'production',
+    //   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    //   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    // });
 
+   res.cookie("token", token, {
+    httpOnly: true,
+    
+    // 🔑 Fix 1: Ensures cookie is sent across HTTPS
+    secure: isDeployed, 
+    
+    // 🔑 Fix 2: Ensures cookie is sent from Vercel domain to Render domain
+    sameSite: isDeployed ? "none" : "lax", 
+    
+    // 🔑 Fix 3: Ensures cookie is valid for all paths (e.g., /api/auth/me) on the backend domain
+    path: '/', 
+
+    maxAge: 30 * 24 * 60 * 60 * 1000, 
+});
+
+
+
+//console.log("NODE ENV:", process.env.NODE_ENV);
 
    res.redirect(`${process.env.CLIENT_URL}/auth/callback`);
   } catch (error) {
