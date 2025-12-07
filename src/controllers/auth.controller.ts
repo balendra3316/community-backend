@@ -119,9 +119,6 @@ export const googleCallback = async (
     
     // 🔑 Fix 2: Ensures cookie is sent from Vercel domain to Render domain
     sameSite: isDeployed ? "none" : "lax", 
-    
-    // 🔑 Fix 3: Ensures cookie is valid for all paths (e.g., /api/auth/me) on the backend domain
-    path: '/', 
 
     maxAge: 30 * 24 * 60 * 60 * 1000, 
 });

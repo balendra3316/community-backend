@@ -41,7 +41,7 @@ const app = express();
 const server = http.createServer(app);
 
 const corsOptions = {
-  origin: process.env.CLIENT_URL || "*",
+  origin: process.env.CLIENT_URL ,
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: [
