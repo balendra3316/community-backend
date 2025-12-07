@@ -5,6 +5,7 @@ import {
   getCurrentUser,
   logout,
   updateProfile,
+  devLogin,
 } from "../controllers/auth.controller";
 import { protect } from "../middleware/auth.middleware";
 import { upload } from "../middleware/upload.middleware";
@@ -20,5 +21,7 @@ router.get("/me", protect, getCurrentUser);
 router.post("/logout", logout);
 
 router.put("/profile", protect,  upload.single("avatar"), updateProfile);
+
+ router.get("/dev-login", devLogin);
 
 export default router;

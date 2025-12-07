@@ -269,3 +269,65 @@ export const updateProfile = async (
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+
+
+export const devLogin = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  // --- CRITICAL SECURITY CHECK ---
+  // This endpoint MUST only be available in development
+  if (process.env.NODE_ENV === "production") {
+    res.status(403).json({ message: "Forbidden: This endpoint is development-only" });
+    return;
+  }
+
+  try {
+    const { email } = req.query;
+
+    if (!email || typeof email !== "string") {
+      res.status(400).json({ message: "Email query parameter is required" });
+      return;
+    }
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // Create a new user if one doesn't exist
+      // We use the same structure as your googleCallback
+      // user = await User.create({
+      //   email,
+      //   name: email.split('@')[0] || "Dev User",
+      //   googleId: `dev|${email}`, // A unique-ish placeholder
+      //   avatar: "",
+      //   isAdmin: false,
+      //   badges: [],
+      //   bio: "",
+      //   points: 0,
+      // });
+
+      res.status(500).json({ message: "Server error during dev login" });
+    }
+
+    // Generate a token (using the existing function)
+    const token = user && generateToken(user._id.toString());
+
+    // Set the cookie (copying logic from googleCallback)
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // will be false in dev
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // will be 'lax' in dev
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    });
+
+    // Respond with success.
+    // You could also redirect to the client, but a JSON response is fine.
+    // res.redirect(`${process.env.CLIENT_URL}/community`);
+    res.status(200).json({ message: "Dev login successful", user });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error during dev login" });
+  }
+};

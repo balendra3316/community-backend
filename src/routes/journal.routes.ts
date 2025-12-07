@@ -14,7 +14,7 @@ const router = express.Router();
 
 // A logged-in user can always view their past entries
 router.route('/')
-    .get(protect, getJournalEntries);
+    .get(protect,checkSubscription, getJournalEntries);
 
 // But they need an active subscription to create new ones
 router.route('/')

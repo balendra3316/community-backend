@@ -56,7 +56,7 @@ interface HealthCheckResponse { // Kept for the healthCheck function
 export const sendMessage = async (req: ChatRequest, res: Response<ApiResponse>): Promise<void> => {
     try {
         const { message } = req.body;
-
+console.log("Received message:", message);
         if (!message || message.trim() === '') {
             // FIX: Send response, then return.
             res.status(400).json({ success: false, error: 'Message is required' });

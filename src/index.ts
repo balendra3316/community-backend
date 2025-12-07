@@ -9,7 +9,9 @@ import connectDB from "./config/db";
 import passport from "./config/passport";
 import { notFound, errorHandler } from "./middleware/error.middleware";
 import { setupSocketIO } from "./socket";
- 
+ import User from './models/User.model'
+import Admin from './models/Admin.model'
+import bcrypt from 'bcryptjs';
 
 
 
@@ -105,37 +107,83 @@ app.use('/api/journal', journalRoutes);
 
 
 
+
 app.use(notFound);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {});
 
 
-// const startServer = async () => {
+// const PORT = process.env.PORT || 5000;
+// server.listen(PORT, () => {});
+
+
+const startServer = async () => {
+  try {
+    // First, connect to the database and wait for it to finish
+    await connectDB();
+    console.log("✅ MongoDB Connected...");
+
+    // Second, run the one-time knowledge processing script
+    // It will check if data exists and only run if the collection is empty
+    //await processAndStoreKnowledge();
+
+    // Finally, start the server now that the database is ready
+    const PORT = process.env.PORT || 5000;
+    server.listen(PORT, () => {
+      console.log(` Server running on port ${PORT}`);
+    });
+
+  } catch (error) {
+    console.error(" Failed to start server:", error);
+    process.exit(1);
+  }
+};
+
+// --- 3. CALL THE STARTUP FUNCTION ---
+startServer();
+
+
+
+
+
+
+// // --- ADMIN CREATION FUNCTION ---
+// const addAdminToDatabase = async (
+//   email: string,
+//   password: string,
+//   name: string
+// ): Promise<void> => {
 //   try {
-//     // First, connect to the database and wait for it to finish
-//     await connectDB();
-//     console.log("✅ MongoDB Connected...");
+//     // Check if admin already exists
+//     const existingAdmin = await Admin.findOne({ email });
+//     if (existingAdmin) {
+//       console.log(`⚠️  Admin with email ${email} already exists!`);
+//       return;
+//     }
 
-//     // Second, run the one-time knowledge processing script
-//     // It will check if data exists and only run if the collection is empty
-//     //await processAndStoreKnowledge();
+//     // Hash the password
+//     const hashedPassword = await bcrypt.hash(password, 10);
 
-//     // Finally, start the server now that the database is ready
-//     const PORT = process.env.PORT || 5000;
-//     server.listen(PORT, () => {
-//       console.log(`🚀 Server running on port ${PORT}`);
+//     // Create new admin
+//     const newAdmin = new Admin({
+//       email,
+//       password: hashedPassword,
+//       name,
 //     });
 
+//     // Save to database
+//     await newAdmin.save();
+//     console.log(`✅ Admin successfully created!`);
+//     console.log(`   Email: ${email}`);
+//     console.log(`   Name: ${name}`);
 //   } catch (error) {
-//     console.error("❌ Failed to start server:", error);
-//     process.exit(1);
+//     console.error("❌ Error creating admin:", error);
 //   }
 // };
 
-// // --- 3. CALL THE STARTUP FUNCTION ---
-// startServer();
+// // --- UNCOMMENT BELOW TO ADD AN ADMIN ---
+//  addAdminToDatabase('vinay626397@gmail.com', 'Vin@y123', 'Tech Community Admin');
+
 
 
 
