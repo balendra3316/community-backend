@@ -12,7 +12,8 @@ import { setupSocketIO } from "./socket";
  import User from './models/User.model'
 import Admin from './models/Admin.model'
 import bcrypt from 'bcryptjs';
-
+//import {processAndStoreKnowledge} from "./prepare-knowledge";
+import { GoogleGenAI } from "@google/genai";
 
 
 
@@ -40,6 +41,7 @@ connectDB();
 const app = express();
 const server = http.createServer(app);
 
+console.log("Client URL:", process.env.CLIENT_URL);
 const corsOptions = {
   origin: process.env.CLIENT_URL ,
   credentials: true,
@@ -145,6 +147,23 @@ startServer();
 
 
 
+// const geminkey=process.env.GEMINI_API_KEY_SECOND
+
+// const ai = new GoogleGenAI({ apiKey: geminkey });
+
+// async function main() {
+//   const response = await ai.models.generateContent({
+//     model: "gemini-2.5-flash",
+//     contents: "my name is vinay and i am a software developer. Write a short bio about me",
+//   });
+//   console.log(response.text);
+// }
+
+// main();
+
+
+
+//processAndStoreKnowledge();
 
 
 // // --- ADMIN CREATION FUNCTION ---

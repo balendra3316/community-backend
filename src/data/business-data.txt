@@ -1,0 +1,27 @@
+# Community Information
+
+## Community Overview
+This is a Learning Management System (LMS) community platform designed to facilitate educational collaboration and knowledge sharing among members.
+
+## Features
+- Interactive chat bot for community assistance
+- User-friendly interface for learning
+- Community engagement and support
+- Resource sharing and collaboration tools
+
+## About the Developer
+
+**Developer Name:** Balendra Singh Parihar
+
+Balendra Singh Parihar is the developer behind this LMS platform. The system is designed with a focus on providing an accessible and interactive learning experience through integrated chat bot support and community features.
+
+## Chat Bot Purpose
+The community chat bot is available to:
+- Answer frequently asked questions
+- Guide users through platform features
+- Provide technical support
+- Assist with community information and navigation
+- Help connect members with relevant resources
+
+---
+Last Updated: By Balendra Singh Parihar
